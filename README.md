@@ -6,8 +6,8 @@ We fine-tune the [mT5-base model](https://huggingface.co/google/mt5-base) on Eng
 
 ## Datasets
 
-- TL;DR Reddit dataset ([link](https://zenodo.org/records/1043504))
-- CodeSwitch-Reddit ([link](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz))
+-  [TL;DR Reddit dataset](https://zenodo.org/records/1043504)
+-  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)
 
 ## Model
 
