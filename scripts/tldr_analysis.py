@@ -1,23 +1,30 @@
 import sys
-import nltk
 import json
 import numpy as np
 import pandas as pd
 import tqdm
 from tabulate import tabulate
+from transformers import MT5Tokenizer
 
 if __name__ == "__main__":
 
     tldr_file = sys.argv[1]
     output_file = sys.argv[2]
+    i_o_sequences = sys.argv[3]
+
+    # load tokenizer
+    tokenizer = MT5Tokenizer.from_pretrained("google/mt5-base")
+
     unique_subreddits = set()
     num_posts = 0
     body_lens = []
     summary_lens = []
     total_summary_tokens = 0
 
-    with open(tldr_file, "r", encoding='utf-8') as file:
+    with open(tldr_file, "r", encoding='utf-8') as file, \
+        open(i_o_sequences, "w", encoding="utf-8") as output_seq:
 
+        # to make tracking progress easier
         total_lines = sum(1 for _ in tqdm.tqdm(file, desc="Counting Lines"))
 
         file.seek(0) # return to start of file
@@ -27,8 +34,16 @@ if __name__ == "__main__":
             if line.strip():
                 try:
                     data = json.loads(line)
-                    body_tokens = nltk.word_tokenize(data["normalizedBody"])
-                    summary_tokens = nltk.word_tokenize(data["summary"])
+
+                    body_text = data["content"]
+                    summary_text = data["summary"]
+
+                    body_tokens = tokenizer.tokenize(body_text)
+                    summary_tokens = tokenizer.tokenize(summary_text)
+
+                    json.dump({"input": body_tokens, "output": summary_tokens}, output_seq)
+                    output_seq.write("\n")
+
                     subreddit_id = data.get("subreddit_id")
                     if subreddit_id is not None:
                         unique_subreddits.add(data.get("subreddit_id"))
@@ -43,12 +58,14 @@ if __name__ == "__main__":
     body_lens = np.array(body_lens)
     summary_lens = np.array(summary_lens)
 
+    # find stats for body text
     mean_body_len = np.mean(body_lens)
     median_body_len = np.median(body_lens)
     min_body_len = np.min(body_lens)
     max_body_len = np.max(body_lens)
     std_body_len = np.std(body_lens)
 
+    # find stats for summary text
     mean_summary_len = np.mean(summary_lens)
     median_summary_len = np.median(summary_lens)
     min_summary_len = np.min(summary_lens)
