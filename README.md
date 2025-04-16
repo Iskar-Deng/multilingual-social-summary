@@ -56,9 +56,9 @@ multilingual-social-summary/
 
 | Folder/File | Description |
 |-------------|-------------|
-| `data/`     | Raw and intermediate data files, including corpus and toy set |
+| `data/`     | Raw and intermediate data files (local only) |
 | `results/`  | Processed outputs such as statistics and model inputs |
-| `scripts/`  | Shell and Python scripts for running tasks |
+| `scripts/`  | Shell for running tasks |
 | `src/`      | Main Python modules (preprocessing, future model use) |
 | `requirements.txt` | Dependency file for environment setup |
 | `.gitignore`       | Prevents unnecessary files from being tracked |
