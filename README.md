@@ -45,8 +45,6 @@ multilingual-social-summary/
 ├── toy_data_tokenized.jsonl          # 100-sample tokenized toy dataset
 ```
 
-</details>
-
 ---
 
 ## Folder Descriptions
@@ -60,4 +58,26 @@ multilingual-social-summary/
 | `requirements.txt` | Dependency file for environment setup |
 | `.gitignore`       | Prevents unnecessary files from being tracked |
 | `README.md`        | This file |
+
+## Environment Setup
+
+Using a Python virtual environment for isolation:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Then install dependencies:
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+If needed, you can regenerate it using:
+
+```bash
+pip freeze > requirements.txt
+```
 
