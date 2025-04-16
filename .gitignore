@@ -1,5 +1,6 @@
 checkpoints/
 data/
+venv/
 *.bin
 *.pt
 *.log
