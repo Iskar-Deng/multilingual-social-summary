@@ -21,10 +21,7 @@ We fine-tune the [mT5-base model](https://huggingface.co/google/mt5-base) on Eng
 - BERTScore (XLM-R)
 - LaSE (optional, reference-free)
 
-## 📁 Project Structure
-
-<details>
-<summary>Click to expand</summary>
+## Project Structure
 
 ```text
 multilingual-social-summary/
