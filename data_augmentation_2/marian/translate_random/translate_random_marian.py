@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#Randomly translate input text into one of the five languages
 import json
 import jsonlines
 import random
@@ -7,7 +8,7 @@ import torch
 from transformers import MarianTokenizer, MarianMTModel
 from tqdm import tqdm
 
-#  1) Define your target languages & corresponding Opus-MT checkpoints and names
+
 LANG_MODELS = {
     "tl": "Helsinki-NLP/opus-mt-en-tl",  # Tagalog
     "el": "Helsinki-NLP/opus-mt-en-el",  # Greek
@@ -57,7 +58,7 @@ def translate_random_lang (dataset, seed, use_gpu):
         lang = random.choice(langs)
         tokenizer, model = preloaded[lang]
 
-        # Reconstruct from tokens if available
+       
         raw = entry.get("input_text", "")
         translated = translate_text(raw, tokenizer, model)
         out.append({
@@ -89,18 +90,17 @@ if __name__ == "__main__":
     parser.add_argument('--use_gpu', action='store_true', help='Use GPU for inference')
     args = parser.parse_args()
 
-    # Load data
+ 
     with open(args.input, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
 
-    # Translate
+
     translated = translate_random_lang(data, args.seed, args.use_gpu)
 
-    # Save
     with jsonlines.open(args.output, mode='w') as writer:
         writer.write_all(translated)
 
     print(f"Done — translated {len(translated)} entries → {args.output}")
 
-    # load your data
+ 
     
