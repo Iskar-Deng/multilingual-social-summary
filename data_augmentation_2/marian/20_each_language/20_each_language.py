@@ -7,7 +7,7 @@ import torch
 from transformers import MarianTokenizer, MarianMTModel
 from tqdm import tqdm
 
-# ── 1) Define your target languages & corresponding Opus-MT checkpoints and names
+
 LANG_MODELS = {
     "tl": "Helsinki-NLP/opus-mt-en-tl",  # Tagalog
     "el": "Helsinki-NLP/opus-mt-en-el",  # Greek
@@ -99,15 +99,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    # Load data
+
     with open(args.input, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
 
-    # Translate fixed batches
+  
     translated = translate_fixed_lang(data, args.use_gpu)
 
 
-    # Save
+ 
     with jsonlines.open(args.output, mode="w") as writer:
         writer.write_all(translated)
 
