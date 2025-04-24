@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#Each entry is translated into all 5 languages
 
 import json
 import jsonlines
@@ -8,11 +8,10 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from tqdm import tqdm
 
-# NLLB model setup
+
 MODEL_NAME = "facebook/nllb-200-distilled-600M"
 SRC_LANG = "eng_Latn"
 
-# Define target languages with lang codes and names
 LANG_CODES = {
     "tl": "tgl_Latn",      # Tagalog
     "el": "ell_Grek",      # Greek
@@ -31,10 +30,10 @@ LANG_NAMES = {
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_NAME,
-        src_lang=SRC_LANG    # tells the tokenizer your source is English by default
+        src_lang=SRC_LANG    
     )
-    # AutoModelForSeq2SeqLM loads the correct translation model class
-    model     = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+
+    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
     return tokenizer, model
 
@@ -46,7 +45,6 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
        out = model.generate(
             **inputs,
             forced_bos_token_id=bos_id,
-            max_length=inputs["input_ids"].shape[-1] + 50  # optional
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 def translate_all_lang(dataset, use_gpu):
@@ -84,14 +82,11 @@ if __name__ == "__main__":
     parser.add_argument('--use_gpu', action='store_true', help='Use GPU for inference')
     args = parser.parse_args()
 
-    # Load data
     with open(args.input, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
 
-    # Translate
     translated = translate_all_lang(data, args.use_gpu)
 
-    # Save
     with jsonlines.open(args.output, mode='w') as writer:
         writer.write_all(translated)
 
