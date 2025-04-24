@@ -3,4 +3,5 @@ data/
 venv/
 *.bin
 *.pt
-*.log
+*.log.DS_Store
+.venv/
