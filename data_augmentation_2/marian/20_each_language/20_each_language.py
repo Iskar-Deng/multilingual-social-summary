@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#Translate 20 entries for each language 1-20:Tagalog 21-40:Greek 41-60:Romanian 61-80:Indonesian 81-100:Russian
 import json
 import jsonlines
 import argparse
