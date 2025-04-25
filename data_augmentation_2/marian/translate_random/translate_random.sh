@@ -1,5 +1,5 @@
 #!/bin/bash
-python3 translate_random.py\
+exec ~/miniconda3/envs/nllb/bin/python translate_random.py\
     --input    toy_data_tokenized.jsonl \
     --output   translate_random.jsonl  \
     --seed 123\
