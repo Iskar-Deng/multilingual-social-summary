@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #Randomly translate input text into one of the five languages
 
 import json
@@ -46,6 +45,8 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
             forced_bos_token_id=bos_id,
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
+
+#Randomly select a langauge to translate into
 def translate_random_lang(dataset, seed, use_gpu):
     device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
     tokenizer, model = load_model_and_tokenizer()

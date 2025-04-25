@@ -47,6 +47,8 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
             forced_bos_token_id=bos_id,
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
+
+#Translate 1 input into all languages
 def translate_all_lang(dataset, use_gpu):
     device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
     tokenizer, model = load_model_and_tokenizer()

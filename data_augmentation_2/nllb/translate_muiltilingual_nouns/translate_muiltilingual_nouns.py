@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-#Translate 20 entries for each language 1-20:Tagalog 21-40:Greek 41-60:Romanian 61-80:Indonesian 81-100:Russian
-
-
+#Choose at least one to at most half of the total NN and NNs to be randomly translated into one of the five languages.
 import json
 import jsonlines
 import argparse
@@ -9,11 +6,13 @@ import torch
 import random
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from tqdm import tqdm
+import nltk
+from nltk import word_tokenize, pos_tag
+nltk.download("averaged_perceptron_tagger_eng")
 
 
 MODEL_NAME = "facebook/nllb-200-distilled-600M"
 SRC_LANG = "eng_Latn"
-
 
 LANG_CODES = {
     "tl": "tgl_Latn",      # Tagalog
@@ -33,9 +32,7 @@ LANG_NAMES = {
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_NAME,
-        src_lang=SRC_LANG    
-    )
-   
+        src_lang=SRC_LANG        )
     model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
     return tokenizer, model
@@ -48,48 +45,54 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
        out = model.generate(
             **inputs,
             forced_bos_token_id=bos_id,
-           
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
-# In turn tl, el, ro, id, ru, each get 20 entries to translate into
-def translate_fixed_lang(dataset, use_gpu):
-    """
-    Translate exactly `per_lang` entries for each target language, in dataset order.
-    The first `per_lang` entries → Tagalog, next `per_lang` → Greek, etc.
-    """
-    device = "cuda" if (use_gpu and torch.cuda.is_available()) else "cpu"
-    per_lang =20
+#Randomly select nouns and a language to translate the input text to
+def translate_random_lang(dataset, seed, use_gpu):
+    device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
     tokenizer, model = load_model_and_tokenizer()
     model.to(device)
-    
-    langs = list(LANG_CODES.keys())
-    seq = []
-    for lang in langs:
-        seq.extend([lang] * per_lang)
-
+    random.seed(seed)
     out = []
-    for entry, lang in tqdm(zip(dataset, seq),
-                            total=len(seq),
-                            desc="Translating entries",
-                            unit="entry"):
-        
-      
-        tokens = entry.get("input_tokens")
-        if tokens:
-            raw = tokenizer.convert_tokens_to_string(tokens)
-        else:
-            raw = entry.get("input_text", "")
+
+    for entry in tqdm(dataset, desc="Translating entries", unit="entry"):
+        raw = entry.get("input_text", "")
+        words = word_tokenize(raw)
+        tags = pos_tag(words)
+
+    
+        noun_indices = [i for i, (_, tag) in enumerate(tags) if tag == ("NN" or "NNS")]
+        if not noun_indices:
+            out.append(entry)
+            continue
+
+        num_to_translate = random.randint(1, max(1, len(noun_indices) // 2))
+        selected_noun_indices = random.sample(noun_indices, num_to_translate)
+
+        translated_from_to = []
+        lang = random.choice(list(LANG_CODES.keys()))
         tgt_lang_code = LANG_CODES[lang]
-        translated = translate_text(raw, tokenizer, model, tgt_lang_code)
+
+        for idx in selected_noun_indices:
+            original_word = words[idx]
+            translated_word = translate_text(original_word, tokenizer, model, tgt_lang_code)
+            words[idx] = translated_word
+            translated_from_to.append({
+                "from": original_word,
+                "to": translated_word
+            })
+
+        mixed_input = " ".join(words)
+
         out.append({
-            "input_text": translated,
+            "input_text": mixed_input,
             "summary_text": entry.get("summary_text", ""),
-            "translated_to": LANG_NAMES[lang]
+            "translated_from_to": translated_from_to,
+            "lang": LANG_NAMES[lang]
         })
 
     return out
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Translate each JSON entry into all target languages using NLLB."
@@ -102,15 +105,17 @@ if __name__ == "__main__":
         "-o", "--output", default="translated_dataset.json",
         help="Path to write translated JSON."
     )
+    parser.add_argument(
+        "--seed", type=int, default=42,
+        help="Random seed for reproducible language assignment."
+    )
     parser.add_argument('--use_gpu', action='store_true', help='Use GPU for inference')
     args = parser.parse_args()
 
-   
     with open(args.input, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
 
-    translated = translate_fixed_lang(data,args.use_gpu)
-
+    translated = translate_random_lang(data, args.seed,args.use_gpu)
 
     with jsonlines.open(args.output, mode='w') as writer:
         writer.write_all(translated)
