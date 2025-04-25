@@ -14,7 +14,7 @@ request_memory   = 8GB
 request_gpus     = 1
 
 # pass in:  $1=input  $2=output  $3=seed
-arguments        = toy_data_tokenized.jsonl 20_each_dataset.json --use_gpu
+arguments        = toy_data_tokenized.jsonl 20_each_language.jsonl --use_gpu
 
 
 

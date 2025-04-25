@@ -1,6 +1,6 @@
 #!/bin/bash
-python3 translate_random.py\
-    --input    toy_data_tokenized.jsonl  \
-    --output   translate_random.jsonl \
-    --seed 123\
-    --use_gpu 
+exec ~/miniconda3/envs/nllb/bin/python translate_random.py\
+    --input    "$1" \
+    --output   "$2" \
+    --seed "$3"\
+    --use_gpu "$4"
