@@ -22,8 +22,8 @@ def main():
         print("No evaluation metric selected. Use --bert and/or --rouge.")
         sys.exit(1)
 
-    score_types = ["precision", "recall", "f1"]
-
+    score_types = ["f1"]  # Ommitting "precision" and "recall" for simplicity; f1 is the most common metric and a combidation of both
+    
     if args.bert:
         bert_scores = {score_type: [] for score_type in score_types}
     
@@ -38,12 +38,16 @@ def main():
             data = json.loads(line)
             num_lines += 1
 
-            for key in data.keys():
-                if key == "input_text":
-                    reference = data[key]
-                else:
-                    # Assuming the key that is not "input_text" is the prediction
-                    prediction = data[key]
+            if "summary_text" in data.keys() and "reference_text" in data.keys():
+                reference = data["reference_text"]
+                prediction = data["summary_text"]
+            else:
+                print("Warning: 'summary_text' or 'reference_text' not found in the data. Assuming 'input_text' is the reference and another key is the prediction.")
+                for key in data.keys():
+                    if key == "input_text":
+                        reference = data[key]
+                    else:
+                        prediction = data[key]
 
             if args.bert:
                 scores = bert_score.score(
