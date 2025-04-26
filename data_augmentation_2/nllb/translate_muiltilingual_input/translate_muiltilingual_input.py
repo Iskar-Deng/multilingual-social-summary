@@ -34,9 +34,8 @@ LANG_NAMES = {
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_NAME,
-        src_lang=SRC_LANG    # tells the tokenizer your source is English by default
+        src_lang=SRC_LANG    
     )
-    # AutoModelForSeq2SeqLM loads the correct translation model class
     model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
     return tokenizer, model
@@ -49,10 +48,10 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
        out = model.generate(
             **inputs,
             forced_bos_token_id=bos_id,
-            #max_length=inputs["input_ids"].shape[-1] + 50  # optional
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
+#Randomly select sentences and a language to translate the input text to
 def translate_random_lang(dataset, seed, use_gpu):
     device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
     tokenizer, model = load_model_and_tokenizer()
@@ -65,8 +64,8 @@ def translate_random_lang(dataset, seed, use_gpu):
         sentences = sent_tokenize(raw)
         num_to_translate = random.randint(1, max(1, len(sentences) // 2))
         selected_idxs = random.sample(range(len(sentences)), num_to_translate)
+        lang = random.choice(list(LANG_CODES.keys()))
         for idx in selected_idxs:
-            lang = random.choice(list(LANG_CODES.keys()))
             tgt_lang_code = LANG_CODES[lang]
             translated = translate_text(sentences[idx], tokenizer, model, tgt_lang_code)
             sentences[idx] = translated 

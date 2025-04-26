@@ -1,5 +1,4 @@
-##Devide input into senetnces, choose at least one to at most half of the total sentences to be randomly translated 
-#into one of the five languages.
+##Choose at least one to at most half of the total NN and NNs to be randomly translated into one of the five languages.
 import json
 import jsonlines
 import random
@@ -8,9 +7,8 @@ import torch
 from transformers import MarianTokenizer, MarianMTModel
 from tqdm import tqdm
 import nltk
-nltk.download("punkt")
-nltk.download("punkt_tab")  
-from nltk.tokenize import sent_tokenize
+from nltk import word_tokenize, pos_tag
+nltk.download("averaged_perceptron_tagger_eng")
 
 LANG_MODELS = {
     "tl": "Helsinki-NLP/opus-mt-en-tl",  # Tagalog
@@ -42,7 +40,7 @@ def translate_text(text: str, tokenizer: MarianTokenizer, model: MarianMTModel) 
         out = model.generate(**inputs)
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
-#Select sentences and a language to translate input text into
+#Randomly select nouns and a language to translate the input text to
 def translate_random_lang(dataset, seed, use_gpu):
     device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
 
@@ -55,27 +53,39 @@ def translate_random_lang(dataset, seed, use_gpu):
 
     random.seed(seed)
     out = []
-    langs = list(LANG_MODELS.keys())
 
     for entry in tqdm(dataset, desc="Translating entries", unit="entry"):
         raw = entry.get("input_text", "")
-        sentences = sent_tokenize(raw)
+        words = word_tokenize(raw)
+        tags = pos_tag(words)
+        noun_indices = [i for i, (_, tag) in enumerate(tags) if tag == ("NN" or "NNS") ]
+        if not noun_indices:
+            out.append(entry)
+            continue
 
-        num_to_translate = random.randint(1, max(1, len(sentences) // 2))
-        selected_idxs = random.sample(range(len(sentences)), num_to_translate)
-        lang = random.choice(langs)
-        for idx in selected_idxs:
+        num_to_translate = random.randint(1, max(1, len(noun_indices) // 2))
+        selected_noun_indices = random.sample(noun_indices, num_to_translate)
+
+        translated_from_to = []
+        lang = random.choice(list(LANG_MODELS.keys()))
+
+        for idx in selected_noun_indices:
+            original_word = words[idx]
             tok, mdl = preloaded[lang]
-            translated = translate_text(sentences[idx], tok, mdl)
-            sentences[idx] = translated  
+            translated_word = translate_text(original_word, tok, mdl)
+            words[idx] = translated_word
+            translated_from_to.append({
+                "from": original_word,
+                "to": translated_word
+            })
 
-        mixed_input = " ".join(sentences)
+        mixed_input = " ".join(words)
 
         out.append({
             "input_text": mixed_input,
             "summary_text": entry.get("summary_text", ""),
-            "translated_sentences": selected_idxs,
-            "translated_to": LANG_NAMES.get(lang)
+            "translated_sentences": translated_from_to,
+            "translated_to": LANG_NAMES[lang]
         })
 
     return out

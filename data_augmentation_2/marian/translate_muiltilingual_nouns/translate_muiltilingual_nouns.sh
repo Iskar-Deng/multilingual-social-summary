@@ -1,5 +1,5 @@
 #!/bin/bash
-exec ~/miniconda3/envs/nllb/bin/python translate_random.py\
+exec ~/miniconda3/envs/nllb/bin/python translate_muiltilingual_nouns.py\
     --input    "$1" \
     --output   "$2" \
     --seed "$3"\
