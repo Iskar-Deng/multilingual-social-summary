@@ -87,7 +87,7 @@ src/
 - If encountering issues with data augmentation using **fasttext**, fallback to using **langid** for language identification.
 - **Testing** and **training** should be done on the specified server (patas-gn3) to avoid discrepancies with local setups.
 
-## 4. GitIgnore Rules
+## GitIgnore Rules
 
 ```plaintext
 # Checkpoints
