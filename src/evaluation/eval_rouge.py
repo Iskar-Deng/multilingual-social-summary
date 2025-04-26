@@ -1,40 +1,35 @@
-from transformers import XLMRobertaTokenizer
 from rouge_score import rouge_scorer
+from transformers import XLMRobertaTokenizer
 
 # Load tokenizer
 tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-large")
 
-
-def evaluate_rouge(prediction, reference, rouge_types=["rouge1", "rouge2", "rougeL"]):
+def evaluate_rouge(prediction, reference, rouge_types=["rouge1", "rouge2", "rougeL"], get_all_scores=False):
     """
     Evaluate the ROUGE score of the prediction against the reference.
 
     Args:
         prediction (str): List of predicted sentences (summary).
-        reference (str): List of reference sentences (input text).
+        reference (str): List of reference sentences (baseline).
+        rouge_types (list): List of ROUGE types to compute.
+            Default is ["rouge1", "rouge2", "rougeL"].
+        get_all_scores (bool): Whether to return all scores or just the F1 scores.
+            Default is False. 
+            If True, returns a dictionary with precision, recall, and F1 scores for each ROUGE type.
+            If False, returns a tuple of F1 scores for the specified ROUGE types.
 
     Returns:
-        dict: A dictionary with nested dictionaries for each ROUGE type, each, containing precision, recall, and F1 scores.
+        Depends on get_all_scores
     """
 
-    # Custom tokenizer function using XLM-R tokenizer (basic word-like tokens)
-    def tokenize_with_xlm_roberta(text):
-        tokens = tokenizer.tokenize(text)
-        # Optionally filter out special tokens or subword symbols (like "▁")
-        clean_tokens = [token.replace("▁", "") for token in tokens if token not in tokenizer.all_special_tokens]
-        return clean_tokens
-
     # Load the ROUGE metric
-    scorer = rouge_scorer.RougeScorer(rouge_types=rouge_types, use_stemmer=False)
+    scorer = rouge_scorer.RougeScorer(rouge_types=rouge_types, use_stemmer=False, tokenizer=tokenizer)
 
     # Compute ROUGE
     results = {}
 
-    pred_tokens = tokenize_with_xlm_roberta(prediction)
-    ref_tokens = tokenize_with_xlm_roberta(reference)
-
     # Compute ROUGE scores
-    scores = scorer.score(target=" ".join(ref_tokens), prediction=" ".join(pred_tokens))
+    scores = scorer.score(target=reference, prediction=prediction)
 
     for rouge_type, score in scores.items():
         score_as_dict = score._asdict()
@@ -42,5 +37,9 @@ def evaluate_rouge(prediction, reference, rouge_types=["rouge1", "rouge2", "roug
 
         results[rouge_type] = score_as_dict
 
-    return results
+    if get_all_scores:
+        return results
+    else:
+        return tuple([score["f1"] for rouge_type, score in results.items() if rouge_type in rouge_types])
+    
 
