@@ -1,11 +1,10 @@
 import torch
 import logging
 import numpy as np
-# from rouge_score import rouge_scorer
-from .utils import load_langid_model, LANG2ISO, FASTTEXT_LANGS
 from sentence_transformers import SentenceTransformer
 from collections import namedtuple
 from transformers import XLMRobertaTokenizer
+import langid
 
 # Load tokenizer
 tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-large")
@@ -20,7 +19,6 @@ class LaSEScorer(object):
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.labse_model = SentenceTransformer('LaBSE', device=device, cache_folder=cache_dir)
-        self.langid_model = load_langid_model(cache_dir)
 
     def _score_ms(self, targets, predictions, batch_size):
         """Computes batched meaning similarity score"""
@@ -29,27 +27,17 @@ class LaSEScorer(object):
         return (embeddings[:len(targets)] * embeddings[len(targets):]).sum(axis=1)
 
     def _score_lc(self, predictions, target_lang):
-        """Computes batched language confidence score"""
-        target_lang_code = LANG2ISO.get(target_lang, None)
-
-        if not target_lang_code or target_lang_code not in FASTTEXT_LANGS:
-            logger.info(f"{target_lang} not reconginzed. language confidence set to 1.0")
-            return [1.0] * len(predictions)
+        """Computes batched language confidence score using langid"""
+        langid_scores = [langid.classify(pred)[1] for pred in predictions]
         
-        all_langs, all_scores = self.langid_model.predict(predictions, k=176, threshold=-1.0)
-        columns = np.asarray([langs.index(f"__label__{target_lang_code}") for langs in all_langs])
-        rows, all_scores = range(len(all_langs)), np.asarray(all_scores)
-
-        scores = all_scores[rows, columns]
-        scores[columns == 0] = 1.0
-
-        return scores
+        if target_lang:
+            target_lang_score = [score if langid.classify(pred)[0] == target_lang else 1.0 for pred, score in zip(predictions, langid_scores)]
+            return target_lang_score
+        else:
+            return langid_scores
 
     def _score_lp(self, targets, predictions, target_lang, alpha):
         """Computes batched length penalty score"""
-        # This line from original code was giving an errorbecause there is not lang argument in RougeScorer
-        # We use the tokenizer from XLMRobertaTokenizer instead
-        # tokenizer = rouge_scorer.RougeScorer(None, lang=target_lang)._tokenizer
         token_counts = np.asarray([len(tokenizer(s)) for s in targets + predictions])
         target_token_counts = token_counts[:len(targets)]
         prediction_token_counts = token_counts[len(targets):]

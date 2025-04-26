@@ -11,8 +11,10 @@ Arguments:
     --output_dir: Directory to save the fine-tuned model and tokenizer (default: checkpoints/mt5_0425_2)
 
 Notes:
+- If running small-scale local tests, set fp16=False (already set by default).
+- If running on Condor with GPU (patas-gn3), you must manually set fp16=True to enable mixed-precision training.
 - Input texts are truncated to 512 tokens, summaries to 128 tokens.
-- Uses Huggingface Seq2SeqTrainer with mixed-precision (fp16) training.
+- Uses Huggingface Seq2SeqTrainer for fine-tuning.
 
 Example:
     python src/model_train/train_mt5.py --data_path data/standard_data.jsonl --output_dir checkpoints/mt5_finetuned
@@ -34,7 +36,7 @@ from datasets import Dataset
 
 # === Constants ===
 MODEL_NAME = "google/mt5-base"
-DEFAULT_DATA_PATH = "data/standard_data.jsonl"
+DEFAULT_DATA_PATH = "data/toy_data_10.jsonl"
 DEFAULT_OUTPUT_DIR = "./checkpoints/mt5_0425_2"
 LOG_DIR = "./logs"
 
@@ -101,15 +103,14 @@ def main():
         output_dir=args.output_dir,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=2,
-        auto_find_batch_size=True,
-        num_train_epochs=5,
+        num_train_epochs=1,
         logging_dir=LOG_DIR,
         save_strategy="epoch",
         logging_strategy="steps",
         logging_steps=100,
         report_to="none",
         logging_first_step=True,
-        fp16=True,
+        fp16=False,
         dataloader_num_workers=2
     )
 

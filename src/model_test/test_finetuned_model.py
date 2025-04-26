@@ -21,7 +21,7 @@ Example:
 import sys
 from transformers import MT5Tokenizer, MT5ForConditionalGeneration
 
-MODEL_DIR = "./checkpoints/toy_mt5"
+MODEL_DIR = "./checkpoints/mt5_test_run"
 MAX_INPUT_LENGTH = 512
 MAX_OUTPUT_LENGTH = 128
 
