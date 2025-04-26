@@ -36,8 +36,8 @@ from datasets import Dataset
 
 # === Constants ===
 MODEL_NAME = "google/mt5-base"
-DEFAULT_DATA_PATH = "data/toy_data_10.jsonl"
-DEFAULT_OUTPUT_DIR = "./checkpoints/mt5_0425_2"
+DEFAULT_DATA_PATH = "data/full_data.jsonl"
+DEFAULT_OUTPUT_DIR = "./checkpoints/mt5"
 LOG_DIR = "./logs"
 
 MAX_INPUT_LENGTH = 512
@@ -101,7 +101,7 @@ def main():
     # Define training arguments
     training_args = Seq2SeqTrainingArguments(
         output_dir=args.output_dir,
-        per_device_train_batch_size=8,
+        per_device_train_batch_size=8, # If training on gn3, set to 16
         gradient_accumulation_steps=2,
         num_train_epochs=1,
         logging_dir=LOG_DIR,
@@ -110,7 +110,7 @@ def main():
         logging_steps=100,
         report_to="none",
         logging_first_step=True,
-        fp16=False,
+        fp16=False, # If training on gn3, set to True for faster training
         dataloader_num_workers=2
     )
 
