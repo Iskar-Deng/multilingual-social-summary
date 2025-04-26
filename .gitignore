@@ -4,9 +4,10 @@ checkpoints/
 # Datasets
 data/
 
-# Python virtual environments
+# Python virtual environments (add the path of your local env here)
 venv/
 .venv/
+socialsum-venv/
 
 # Model files
 *.bin
@@ -17,3 +18,4 @@ venv/
 
 # Log files
 *.log
+logs/
