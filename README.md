@@ -43,6 +43,7 @@ Please ensure that any new dependencies added are compatible with these versions
 
 The src is organized as follows:
 
+```
 src/
 ├── data_augmentation
 │   ├── marian              # MarianMT models for data augmentation
