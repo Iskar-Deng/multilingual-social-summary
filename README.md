@@ -41,9 +41,9 @@ Please ensure that any new dependencies added are compatible with these versions
 
 ## File Structure and Usage
 
-The project is organized as follows:
+The src is organized as follows:
 
-```
+src/
 ├── data_augmentation
 │   ├── marian              # MarianMT models for data augmentation
 │   ├── nllb                # NLLB-200 models for data augmentation
@@ -85,6 +85,32 @@ The project is organized as follows:
 - **ROUGE** evaluation cannot be used on the Patas node due to version mismatches.
 - If encountering issues with data augmentation using **fasttext**, fallback to using **langid** for language identification.
 - **Testing** and **training** should be done on the specified server (patas-gn3) to avoid discrepancies with local setups.
+
+## 4. GitIgnore Rules
+
+```plaintext
+# Checkpoints
+checkpoints/
+
+# Datasets
+data/
+
+# Python virtual environments
+venv/
+.venv/
+socialsum-venv/
+
+# Model files
+*.bin
+*.pt
+
+# MacOS system files
+.DS_Store
+
+# Log files
+*.log
+logs/
+```
 
 ## Contribution
 
