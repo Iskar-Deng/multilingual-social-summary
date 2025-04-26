@@ -1,7 +1,19 @@
+# Checkpoints
 checkpoints/
+
+# Datasets
 data/
+
+# Python virtual environments
 venv/
+.venv/
+
+# Model files
 *.bin
 *.pt
-*.log.DS_Store
-.venv/
+
+# MacOS system files
+.DS_Store
+
+# Log files
+*.log
