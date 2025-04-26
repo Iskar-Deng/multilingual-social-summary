@@ -1,3 +1,30 @@
+"""
+analyze_tldr.py
+
+This script processes a TL;DR dataset in JSONL format and performs two tasks:
+1. Tokenizes the 'content' and 'summary' fields using a specified tokenizer (default: google/mt5-base).
+2. Calculates basic statistics (min, max, mean, median, std deviation) for the tokenized input and output lengths.
+
+Outputs:
+- A new JSONL file where each line contains a tokenized input-output pair.
+- A text file summarizing dataset statistics.
+
+Usage (command line):
+    python src/data_processing/analyze_tldr.py <input_jsonl> <output_tokenized_jsonl> <output_stats_txt>
+
+Arguments:
+    input_jsonl: Path to the original TL;DR dataset (.jsonl)
+    output_tokenized_jsonl: Path to save the tokenized input/output sequences (.jsonl)
+    output_stats_txt: Path to save the dataset statistics (.txt)
+
+Example:
+    python src/data_processing/analyze_tldr.py data/corpus-webis-tldr-17.json tokenized_output.jsonl stats_output.txt
+
+Notes:
+- The script defaults to using the MT5Tokenizer. If your checkpoint is T5, you may see a warning message. 
+  This can generally be ignored unless switching tokenization behavior intentionally.
+"""
+
 import sys
 import json
 import numpy as np
@@ -6,87 +33,74 @@ import tqdm
 from tabulate import tabulate
 from transformers import MT5Tokenizer
 
-if __name__ == "__main__":
-
-    tldr_file = sys.argv[1]
-    output_file = sys.argv[2]
-    i_o_sequences = sys.argv[3]
-
-    # load tokenizer
-    tokenizer = MT5Tokenizer.from_pretrained("google/mt5-base")
-
-    unique_subreddits = set()
-    num_posts = 0
+def load_and_tokenize(input_path, output_seq_path, tokenizer):
     body_lens = []
     summary_lens = []
-    total_summary_tokens = 0
+    unique_subreddits = set()
+    num_posts = 0
+    error_lines = 0
 
-    with open(tldr_file, "r", encoding='utf-8') as file, \
-        open(i_o_sequences, "w", encoding="utf-8") as output_seq:
+    with open(input_path, "r", encoding='utf-8') as infile, open(output_seq_path, "w", encoding="utf-8") as outfile:
+        lines = infile.readlines()
 
-        # to make tracking progress easier
-        total_lines = sum(1 for _ in tqdm.tqdm(file, desc="Counting Lines"))
+        for idx, line in enumerate(tqdm.tqdm(lines, desc="Processing Data")):
+            if not line.strip():
+                continue
+            try:
+                data = json.loads(line)
+                body_text = data["content"]
+                summary_text = data["summary"]
 
-        file.seek(0) # return to start of file
+                body_tokens = tokenizer.tokenize(body_text)
+                summary_tokens = tokenizer.tokenize(summary_text)
 
-        for line in tqdm.tqdm(file, total=total_lines, desc="Processing Data"):
-            
-            if line.strip():
-                try:
-                    data = json.loads(line)
+                json.dump({"input": body_tokens, "output": summary_tokens}, outfile)
+                outfile.write("\n")
 
-                    body_text = data["content"]
-                    summary_text = data["summary"]
+                subreddit_id = data.get("subreddit_id")
+                if subreddit_id:
+                    unique_subreddits.add(subreddit_id)
 
-                    body_tokens = tokenizer.tokenize(body_text)
-                    summary_tokens = tokenizer.tokenize(summary_text)
+                num_posts += 1
+                body_lens.append(len(body_tokens))
+                summary_lens.append(len(summary_tokens))
 
-                    json.dump({"input": body_tokens, "output": summary_tokens}, output_seq)
-                    output_seq.write("\n")
+            except json.JSONDecodeError:
+                print(f"Error decoding line {idx}")
+                error_lines += 1
 
-                    subreddit_id = data.get("subreddit_id")
-                    if subreddit_id is not None:
-                        unique_subreddits.add(data.get("subreddit_id"))
-                    num_posts += 1
-                    body_lens.append(len(body_tokens))
-                    summary_lens.append(len(summary_tokens))
+    return body_lens, summary_lens, num_posts, unique_subreddits, error_lines
 
-                except json.JSONDecodeError as e:
-                    print(f"Error Decoding Line")
-
-    num_subreddits = len(unique_subreddits)
-    body_lens = np.array(body_lens)
-    summary_lens = np.array(summary_lens)
-
-    # find stats for body text
-    mean_body_len = np.mean(body_lens)
-    median_body_len = np.median(body_lens)
-    min_body_len = np.min(body_lens)
-    max_body_len = np.max(body_lens)
-    std_body_len = np.std(body_lens)
-
-    # find stats for summary text
-    mean_summary_len = np.mean(summary_lens)
-    median_summary_len = np.median(summary_lens)
-    min_summary_len = np.min(summary_lens)
-    max_summary_len = np.max(summary_lens)
-    std_summary_len = np.std(summary_lens)
-
-    df_data = {
-        "Min" : [min_body_len, min_summary_len],
-        "Max" : [max_body_len, max_summary_len],
-        "Mean" : [mean_body_len, mean_summary_len],
-        "Median" : [median_body_len, median_summary_len],
-        "Std. Deviation" : [std_body_len, std_summary_len]
+def calculate_statistics(lengths):
+    lengths = np.array(lengths)
+    return {
+        "Min": np.min(lengths),
+        "Max": np.max(lengths),
+        "Mean": np.mean(lengths),
+        "Median": np.median(lengths),
+        "Std. Deviation": np.std(lengths)
     }
 
-    row_names = ["Body", "Summary"]
+def write_statistics(output_file, num_posts, num_subreddits, body_stats, summary_stats):
+    df = pd.DataFrame([body_stats, summary_stats], index=["Body", "Summary"])
+    with open(output_file, "w") as f:
+        f.write("TL;DR Dataset Statistics\n\n")
+        f.write(f"Total Posts: {num_posts}\n")
+        f.write(f"Unique Subreddits: {num_subreddits}\n\n")
+        f.write(tabulate(df, headers="keys", tablefmt="pretty"))
 
-    df = pd.DataFrame(data=df_data, index=row_names)
+def main(input_path, output_seq_path, output_stats_path, tokenizer_name="google/mt5-base"):
+    tokenizer = MT5Tokenizer.from_pretrained(tokenizer_name)
+    body_lens, summary_lens, num_posts, unique_subreddits, error_lines = load_and_tokenize(
+        input_path, output_seq_path, tokenizer
+    )
+    body_stats = calculate_statistics(body_lens)
+    summary_stats = calculate_statistics(summary_lens)
+    write_statistics(output_stats_path, num_posts, len(unique_subreddits), body_stats, summary_stats)
+    print(f"Finished! {error_lines} decoding errors.")
 
-    with open(output_file, "w") as file:
-
-        file.write("TL;DR Dataset Statistics\n\n")
-        file.write(f"Total Posts: {num_posts}\nUnique Subreddits: {num_subreddits}\n\n")
-
-        file.write(tabulate(df, headers="keys", tablefmt="pretty"))
+if __name__ == "__main__":
+    input_path = sys.argv[1]
+    output_seq_path = sys.argv[2]
+    output_stats_path = sys.argv[3]
+    main(input_path, output_seq_path, output_stats_path)

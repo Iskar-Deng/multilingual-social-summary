@@ -1,9 +1,26 @@
+"""
+test_hf_model.py
+
+This script loads the Huggingface MT5-base model and generates a summary for a given input text.
+
+Usage:
+    python src/model_test/test_hf_model.py "<input_text>"
+
+Arguments:
+    input_text: Text to summarize (required)
+
+Example:
+    python src/model_test/test_hf_model.py "The stock market saw a significant rally today..."
+"""
+
 import sys
 from transformers import MT5ForConditionalGeneration, MT5Tokenizer
 
-def load_model(model_name="google/mt5-base"):
-    tokenizer = MT5Tokenizer.from_pretrained(model_name)
-    model = MT5ForConditionalGeneration.from_pretrained(model_name)
+MODEL_NAME = "google/mt5-base"
+
+def load_model():
+    tokenizer = MT5Tokenizer.from_pretrained(MODEL_NAME)
+    model = MT5ForConditionalGeneration.from_pretrained(MODEL_NAME)
     return tokenizer, model
 
 def summarize(text, tokenizer, model, max_input_length=512, max_output_length=64):
@@ -13,13 +30,13 @@ def summarize(text, tokenizer, model, max_input_length=512, max_output_length=64
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python model_run.py '<your input text>'")
+        print("Usage: python test_hf_model.py '<input_text>'")
         sys.exit(1)
 
     input_text = sys.argv[1]
 
     print("=" * 60)
-    print("Loading model...")
+    print(f"Loading model: {MODEL_NAME}")
     tokenizer, model = load_model()
     print("Model loaded.\n")
 
