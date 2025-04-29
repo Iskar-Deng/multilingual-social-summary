@@ -29,13 +29,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "evaluation", "evaluation_scripts")))
 from eval_bert_score import evaluate_bert_score
 
-import json
-import argparse
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "evaluation", "evaluation_scripts")))
-from eval_bert_score import evaluate_bert_score
-
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(

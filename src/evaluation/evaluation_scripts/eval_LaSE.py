@@ -2,7 +2,7 @@ from LaSE import LaSEScorer
 
 scorer = LaSEScorer()
 
-def evaluate_LaSE(predictions, references, target_lang=None, get_all_scores=False):
+def evaluate_LaSE(predictions, references, target_lang='en', get_all_scores=False):
     """
     Evaluate the LaSE score of the predictions against the references.
     https://github.com/csebuetnlp/CrossSum/tree/main/LaSE
