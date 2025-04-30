@@ -1,9 +1,14 @@
 import bert_score
+from transformers import logging as hf_logging
+
+# Suppress warnings from the transformers library
+hf_logging.set_verbosity_error()
 
 def evaluate_bert_score(prediction, reference, get_all_scores=False):
     """
     Evaluate the BERT score of the predictions against the references.
     https://huggingface.co/spaces/evaluate-metric/bertscore
+    https://github.com/Tiiiger/bert_score
 
     Args:
         predictions (list): List of predicted sentences (input_text).

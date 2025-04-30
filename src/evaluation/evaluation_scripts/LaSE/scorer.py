@@ -9,6 +9,9 @@ import langid
 # Load tokenizer
 tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-large")
 
+# Language identifier with normalized probabilities
+identifier = langid.langid.LanguageIdentifier.from_modelstring(langid.langid.model, norm_probs=True)
+
 logger = logging.getLogger(__name__)
 LaSEResult = namedtuple("LaSEResult", ("ms", "lc", "lp", "LaSE"))
 
@@ -28,10 +31,10 @@ class LaSEScorer(object):
 
     def _score_lc(self, predictions, target_lang):
         """Computes batched language confidence score using langid"""
-        langid_scores = [langid.classify(pred)[1] for pred in predictions]
+        langid_scores = [identifier.classify(pred)[1] for pred in predictions]
         
         if target_lang:
-            target_lang_score = [score if langid.classify(pred)[0] == target_lang else 1.0 for pred, score in zip(predictions, langid_scores)]
+            target_lang_score = [score if langid.classify(pred)[0] == target_lang else 1.0 - score for pred, score in zip(predictions, langid_scores)]
             return target_lang_score
         else:
             return langid_scores
