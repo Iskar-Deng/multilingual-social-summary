@@ -21,15 +21,21 @@ This end-to-end workflow allows us to assess the impact of multilingual data aug
 
 ## Model
 
-- [google/mt5-base](https://huggingface.co/google/mt5-base)
-- Fine-tuned using Hugging Face Transformers
-- Optional PEFT/LoRA support for efficiency
+- [google/mt5-base](https://huggingface.co/google/mt5-base)  
+  Fine-tuned using Hugging Face Transformers  
+  Optional PEFT/LoRA support for efficiency
+
+- [Helsinki-NLP/MarianMT](https://huggingface.co/Helsinki-NLP)  
+  Used for data augmentation (multilingual translation)
+
+- [facebook/nllb-200](https://huggingface.co/facebook/nllb-200-distilled-600M)  
+  Used for data augmentation (multilingual translation)
 
 ## Evaluation
 
-- ROUGE (abandoned)
-- BERTScore (Reference-based)
+- BERTScore (reference-based)
 - LaSE (reference-free)
+- ROUGE (disabled due to environment limitations)
 
 ## Environment and Dependency Usage Guidelines
 
