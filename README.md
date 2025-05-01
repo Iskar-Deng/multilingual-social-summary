@@ -17,7 +17,9 @@ This end-to-end workflow allows us to assess the impact of multilingual data aug
 ## Datasets
 
 -  [TL;DR Reddit dataset](https://zenodo.org/records/1043504)
+    An English monolingual summarization dataset collected from Reddit, where users provide short TL;DR summaries for their posts.
 -  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)
+    A multilingual Reddit dataset containing code-switched posts across several languages, without human-written summaries.
 
 ## Model
 
