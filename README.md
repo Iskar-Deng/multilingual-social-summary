@@ -91,7 +91,6 @@ src/
 
 ### 1. Setup environment
 
-- Make sure you are on the `patas-gn3` node.
 - Use Python 3.6.8.
 - Install dependencies inside your virtual environment:
 
@@ -123,14 +122,30 @@ condor_submit src/model_train/train_mt5.condor
 - With references (TL;DR):
 
 ```bash
-python src/evaluation/run_scripts/run_eval_with_reference.py data/sum_ref.jsonl --bert
+python src/evaluation/run_scripts/run_eval_with_reference.py path_to_your_output_file.jsonl --bert
 ```
+
+Example format of `sum_ref.jsonl` (each line is a JSON object):
+```json
+{"summary_text": "This is the predicted summary.", "reference_text": "This is the gold summary."}
+```
+
+- `summary_text` → predicted/generated summary by the model  
+- `reference_text` → human-annotated gold/reference summary
 
 - Without references (CodeSwitch):
 
 ```bash
-python src/evaluation/run_scripts/run_eval_no_reference.py data/source_sum.jsonl --LaSE
+python src/evaluation/run_scripts/run_eval_no_reference.py path_to_your_output_file.jsonl --LaSE
 ```
+
+Example format of `source_sum.jsonl` (each line is a JSON object):
+```json
+{"input_text": "This is the input post text.", "summary_text": "This is the predicted summary."}
+```
+
+- `input_text` → original input text/post  
+- `summary_text` → predicted/generated summary by the model
 
 ### 5. Run data augmentation
 
