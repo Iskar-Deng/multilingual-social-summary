@@ -130,9 +130,6 @@ Example format of `sum_ref.jsonl` (each line is a JSON object):
 {"summary_text": "This is the predicted summary.", "reference_text": "This is the gold summary."}
 ```
 
-- `summary_text` → predicted/generated summary by the model  
-- `reference_text` → human-annotated gold/reference summary
-
 - Without references (CodeSwitch):
 
 ```bash
@@ -143,9 +140,6 @@ Example format of `source_sum.jsonl` (each line is a JSON object):
 ```json
 {"input_text": "This is the input post text.", "summary_text": "This is the predicted summary."}
 ```
-
-- `input_text` → original input text/post  
-- `summary_text` → predicted/generated summary by the model
 
 ### 5. Run data augmentation
 
