@@ -4,22 +4,19 @@ run_eval_with_reference.py
 This script evaluates model predictions using different evaluation metrics.
 It supports the following metrics:
 1. **BERTScore**: A metric based on BERT to evaluate the similarity between predicted and reference summaries.
-2. **ROUGE**: A set of metrics (ROUGE-1, ROUGE-2, ROUGE-L) used to evaluate the quality of summaries.
 
 Usage:
     python run_scripts/run_eval_with_reference.py <path_to_input_jsonl> --bert [--get_average] [--hide_individual_scores]
-    python run_scripts/run_eval_with_reference.py <path_to_input_jsonl> --rouge [--get_average] [--hide_individual_scores]
 
 Arguments:
     json_path: Path to the JSON file containing input and summary fields.
     --bert: Enable BERTScore evaluation.
-    --rouge: Enable ROUGE-1, ROUGE-2, ROUGE-L evaluation.
     --get_average: Compute and display average scores across all examples.
     --hide_individual_scores: Suppress printing individual scores for each evaluation.
 
 Notes:
 - The input JSONL file must contain "input_text" and "summary_text" fields.
-- Currently only BERTScore and ROUGE evaluation are supported.
+- Currently only BERTScore evaluation is supported.
 """
 
 import json

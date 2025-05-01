@@ -23,8 +23,7 @@ def evaluate_bert_score(prediction, reference, get_all_scores=False):
     """
 
     # Compute BERTScore
-    scores = bert_score.score([prediction], [reference], model_type="xlm-roberta-large")
-    # results = scorer.compute(predictions=predictions, references=references, model_type="bert-base-multilingual-cased")
+    scores = bert_score.score([prediction], [reference], model_type="microsoft/deberta-xlarge-mnli")
     # Note: List of models can be found here: https://docs.google.com/spreadsheets/d/1RKOVpselB98Nnh_EOC4A2BYn8_201tmPODpNWu4w7xI/edit?gid=0#gid=0
 
     if get_all_scores:
