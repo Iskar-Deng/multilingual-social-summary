@@ -1,5 +1,7 @@
 # Multilingual Social Media Summarization
 
+![Test Image](assets/some-more-mygo-ave-mujica-emotes-v0-i4y71m1d5wte1.gif)
+
 ## Project Overview
 
 This project explores multilingual summarization of user-generated content on Reddit, with a focus on handling code-switched, multilingual, and conversational posts.
@@ -125,7 +127,7 @@ condor_submit src/model_train/train_mt5.condor
 python src/evaluation/run_scripts/run_eval_with_reference.py path_to_your_output_file.jsonl --bert
 ```
 
-Example format of `sum_ref.jsonl` (each line is a JSON object):
+Example format of `output_file.jsonl` (each line is a JSON object):
 ```json
 {"summary_text": "This is the predicted summary.", "reference_text": "This is the gold summary."}
 ```
@@ -136,23 +138,23 @@ Example format of `sum_ref.jsonl` (each line is a JSON object):
 python src/evaluation/run_scripts/run_eval_no_reference.py path_to_your_output_file.jsonl --LaSE
 ```
 
-Example format of `source_sum.jsonl` (each line is a JSON object):
+Example format of `output_file.jsonl` (each line is a JSON object):
 ```json
 {"input_text": "This is the input post text.", "summary_text": "This is the predicted summary."}
 ```
 
-### 5. Run data augmentation
+### 5. Run data augmentation (optional)
 
 For example, to run multilingual input translation:
 
 ```bash
-python src/data_augmentation/marian/translate_muiltilingual_input.py data/toy_data_tokenized.jsonl output.jsonl 123
+python src/data_augmentation/marian/translate_muiltilingual_nouns/translate_muiltilingual_nouns.py data/corpus-webis-tldr-17.json output.jsonl 42
 ```
 
 Or submit via Condor:
 
 ```bash
-condor_submit src/data_augmentation/marian/translate_muiltilingual_input.sh
+condor_submit src/data_augmentation/marian/translate_muiltilingual_nouns/translate_muiltilingual_nouns.cmd
 ```
 
 ---
@@ -192,4 +194,13 @@ logs/
 
 ## Contribution
 
-🥚
+This project was developed collaboratively by the team for a multilingual summarization research task.
+
+- Data augmentation: Zoey Zhou  
+- Model fine-tuning: Nathalia Xu  
+- Benchmark building: Jordan Jin  
+- Dataset analysis: Bartosz Mamro  
+- Code integration: Iskar Deng
+
+
+
