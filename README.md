@@ -1,25 +1,43 @@
 # Multilingual Social Media Summarization
 
-This project explores multilingual summarization of user-generated content on Reddit, including code-switched and conversational posts.
+![Test Image](assets/some-more-mygo-ave-mujica-emotes-v0-i4y71m1d5wte1.gif)
 
-We fine-tune the [mT5-base model](https://huggingface.co/google/mt5-base) on English TL;DR datasets, and adapt it for multilingual and informal inputs using a combination of Reddit datasets.
+## Project Overview
+
+This project explores multilingual summarization of user-generated content on Reddit, with a focus on handling code-switched, multilingual, and conversational posts.
+
+We fine-tune the [mT5-base model](https://huggingface.co/google/mt5-base) on the English TL;DR dataset as a baseline system. To enable multilingual and informal summarization, we augment the TL;DR training data using five translation strategies that cover multiple target languages drawn from the CodeSwitch-Reddit dataset.
+
+The system is evaluated through two complementary tracks:
+- **Reference-based evaluation** on English TL;DR test data using BERTScore;
+- **Reference-free evaluation** on CodeSwitch-Reddit data using LaSE to measure multilingual summarization quality without gold summaries.
+
+This end-to-end workflow allows us to assess the impact of multilingual data augmentation on both monolingual and multilingual summarization tasks.
 
 ## Datasets
 
--  [TL;DR Reddit dataset](https://zenodo.org/records/1043504)
--  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)
+-  [TL;DR Reddit dataset](https://zenodo.org/records/1043504)  
+  An English monolingual summarization dataset collected from Reddit, where users provide short TL;DR summaries for each entry.
+-  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)  
+  A multilingual Reddit dataset containing code-switched entries across several languages, without human-written summaries.
 
 ## Model
 
-- [google/mt5-base](https://huggingface.co/google/mt5-base)
-- Fine-tuned using Hugging Face Transformers
-- Optional PEFT/LoRA support for efficiency
+- [google/mt5-base](https://huggingface.co/google/mt5-base)  
+  Fine-tuned using Hugging Face Transformers  
+  Optional PEFT/LoRA support for efficiency
+
+- [Helsinki-NLP/MarianMT](https://huggingface.co/Helsinki-NLP)  
+  Used for data augmentation (multilingual translation)
+
+- [facebook/nllb-200](https://huggingface.co/facebook/nllb-200-distilled-600M)  
+  Used for data augmentation (multilingual translation)
 
 ## Evaluation
 
-- ROUGE
-- BERTScore (XLM-R)
-- LaSE (optional, reference-free)
+- BERTScore (reference-based)
+- LaSE (reference-free)
+- ROUGE (disabled due to environment limitations)
 
 ## Environment and Dependency Usage Guidelines
 
@@ -49,8 +67,9 @@ src/
 │   ├── marian              # MarianMT models for data augmentation
 │   ├── nllb                # NLLB-200 models for data augmentation
 ├── data_processing
-│   ├── analyze_tldr.py     # Script to analyze TLDR data
-│   ├── generate_dataset.py # Script to generate datasets
+│   ├── analyze_tldr.py            # Script to analyze TLDR data
+│   ├── analyze_code-switch.py     # Script to analyze CodeSwitch data
+│   ├── generate_dataset.py        # Script to generate datasets
 ├── evaluation
 │   ├── evaluation_scripts
 │   │   ├── eval_bert_score.py  # BERTScore evaluation script
@@ -77,6 +96,74 @@ src/
 - **evaluation**: Contains evaluation scripts for BERTScore, LaSE, and ROUGE, as well as related data.
 - **model_test**: Scripts to test the performance of fine-tuned and HuggingFace models.
 - **model_train**: Scripts to train the MT5 model and associated Condor jobs.
+
+## How to Run
+
+### 1. Setup environment
+
+- Use Python 3.6.8.
+- Install dependencies inside your virtual environment:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Prepare datasets
+
+- Download TL;DR dataset: https://zenodo.org/records/1043504
+- Download CodeSwitch-Reddit dataset: https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz
+
+Unpack and place them under a `data/` directory.
+
+### 3. Train baseline model
+
+```bash
+python src/model_train/train_mt5.py --config configs/train_config.yaml
+```
+
+Or submit as a Condor job:
+
+```bash
+condor_submit src/model_train/train_mt5.condor
+```
+
+### 4. Run evaluation
+
+- With references (TL;DR):
+
+```bash
+python src/evaluation/run_scripts/run_eval_with_reference.py path_to_your_output_file.jsonl --bert
+```
+
+Example format of `output_file.jsonl` (each line is a JSON object):
+```json
+{"summary_text": "This is the predicted summary.", "reference_text": "This is the gold summary."}
+```
+
+- Without references (CodeSwitch):
+
+```bash
+python src/evaluation/run_scripts/run_eval_no_reference.py path_to_your_output_file.jsonl --LaSE
+```
+
+Example format of `output_file.jsonl` (each line is a JSON object):
+```json
+{"input_text": "This is the input post text.", "summary_text": "This is the predicted summary."}
+```
+
+### 5. Run data augmentation (optional)
+
+For example, to run multilingual input translation:
+
+```bash
+python src/data_augmentation/marian/translate_muiltilingual_nouns/translate_muiltilingual_nouns.py data/corpus-webis-tldr-17.json output.jsonl 42
+```
+
+Or submit via Condor:
+
+```bash
+condor_submit src/data_augmentation/marian/translate_muiltilingual_nouns/translate_muiltilingual_nouns.cmd
+```
 
 ---
 
@@ -115,4 +202,13 @@ logs/
 
 ## Contribution
 
-🥚
+This project was developed collaboratively by the team for a multilingual summarization research task.
+
+- Data augmentation: Zoey Zhou  
+- Model fine-tuning: Nathalia Xu  
+- Benchmark building: Jordan Jin  
+- Dataset analysis: Bartosz Mamro  
+- Code integration: Iskar Deng
+
+
+
