@@ -27,10 +27,7 @@ Notes:
 """
 
 import sys
-import json
-import numpy as np
 import pandas as pd
-import tqdm
 from tabulate import tabulate
 from transformers import MT5Tokenizer
 
@@ -42,15 +39,13 @@ def load_and_tokenize(input_path, tokenizer:MT5Tokenizer):
 
     return data
 
-import pandas as pd
-
 def write_tokenized_data(data: pd.DataFrame, output_data_path: str, chunk_size: int = 10000):
 
     with open(output_data_path, 'w') as file:
         for start in range(0, len(data), chunk_size):
             chunk = data.iloc[start:start + chunk_size]
 
-            chunk[["Lang1", "Lang2", "tokens"]].to_json(file, orient="records", lines=True)
+            chunk[["Lang1", "Lang2", "Text", "tokens"]].to_json(file, orient="records", lines=True)
 
 
 def calculate_stats(data:pd.DataFrame):
