@@ -1,4 +1,4 @@
-# Multilingual Social Media Summarization
+# Summarization of Code-Switched Social Media Content
 
 ![Test Image](assets/some-more-mygo-ave-mujica-emotes-v0-i4y71m1d5wte1.gif)
 
