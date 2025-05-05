@@ -1,25 +1,3 @@
-"""
-train_mt5.py
-
-This script fine-tunes a pre-trained MT5 model on a summarization dataset (TL;DR format).
-
-Usage:
-    python src/model_train/train_mt5.py --data_path <path_to_input_jsonl> --output_dir <path_to_save_checkpoint>
-
-Arguments:
-    --data_path: Path to the input dataset (default: data/standard_data.jsonl)
-    --output_dir: Directory to save the fine-tuned model and tokenizer (default: checkpoints/mt5_0425_2)
-
-Notes:
-- If running small-scale local tests, set fp16=False (already set by default).
-- If running on Condor with GPU (patas-gn3), you must manually set fp16=True to enable mixed-precision training.
-- Input texts are truncated to 512 tokens, summaries to 128 tokens.
-- Uses Huggingface Seq2SeqTrainer for fine-tuning.
-
-Example:
-    python src/model_train/train_mt5.py --data_path data/standard_data.jsonl --output_dir checkpoints/mt5_finetuned
-"""
-
 import os
 import json
 import argparse
@@ -46,7 +24,6 @@ MAX_OUTPUT_LENGTH = 128
 # === Utility Functions ===
 
 def load_dataset(path):
-    """Load dataset from a JSONL file into Huggingface Dataset format."""
     data = []
     with open(path, "r", encoding="utf-8") as f:
         for line in tqdm(f, desc="Loading data"):
@@ -58,7 +35,6 @@ def load_dataset(path):
     return Dataset.from_pandas(pd.DataFrame(data))
 
 def preprocess(example, tokenizer):
-    """Tokenize input and output texts with truncation and padding."""
     model_inputs = tokenizer(
         example["input_text"],
         truncation=True,
@@ -77,19 +53,22 @@ def preprocess(example, tokenizer):
 
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune MT5 on summarization task.")
-    parser.add_argument("--data_path", type=str, default=DEFAULT_DATA_PATH, help="Path to input JSONL data file.")
-    parser.add_argument("--output_dir", type=str, default=DEFAULT_OUTPUT_DIR, help="Directory to save checkpoints.")
+    parser.add_argument("--data_path", type=str, default=DEFAULT_DATA_PATH)
+    parser.add_argument("--output_dir", type=str, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--grad_accum_steps", type=int, default=2)
+    parser.add_argument("--num_epochs", type=int, default=1)
+    parser.add_argument("--fp16", action="store_true")
+    parser.add_argument("--log_steps", type=int, default=100)
+    parser.add_argument("--num_workers", type=int, default=2)
     args = parser.parse_args()
 
-    # Create necessary directories
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(LOG_DIR, exist_ok=True)
 
-    # Load model and tokenizer
     tokenizer = MT5Tokenizer.from_pretrained(MODEL_NAME)
     model = MT5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-    # Load and preprocess dataset
     dataset = load_dataset(args.data_path)
     print("Tokenizing dataset...")
     tokenized_dataset = dataset.map(
@@ -98,23 +77,21 @@ def main():
         desc="Tokenizing"
     )
 
-    # Define training arguments
     training_args = Seq2SeqTrainingArguments(
         output_dir=args.output_dir,
-        per_device_train_batch_size=8, # If training on gn3, set to 16
-        gradient_accumulation_steps=2,
-        num_train_epochs=1,
+        per_device_train_batch_size=args.batch_size,
+        gradient_accumulation_steps=args.grad_accum_steps,
+        num_train_epochs=args.num_epochs,
         logging_dir=LOG_DIR,
         save_strategy="epoch",
         logging_strategy="steps",
-        logging_steps=100,
+        logging_steps=args.log_steps,
         report_to="none",
         logging_first_step=True,
-        fp16=False, # If training on gn3, set to True for faster training
-        dataloader_num_workers=2
+        fp16=args.fp16,
+        dataloader_num_workers=args.num_workers
     )
 
-    # Initialize Trainer
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
@@ -123,10 +100,8 @@ def main():
         data_collator=DataCollatorForSeq2Seq(tokenizer, model)
     )
 
-    # Start training
     trainer.train()
 
-    # Save model and tokenizer
     model.save_pretrained(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
     print(f"Model and tokenizer saved to {args.output_dir}")
