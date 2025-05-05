@@ -1,12 +1,12 @@
 universe = vanilla
 
-# Path to the shell script that launches training
-executable = src/stress_test/train_mt5_st.sh
+# Path to the shell script that runs fine-tuning and evaluations
+executable = src/stress_test/stress_pipeline.sh
 
 # Output and error logs
-output = logs/train_mt5_st.out
-error  = logs/train_mt5_st.err
-log    = logs/train_mt5_st.log
+output = logs/stress_pipeline.out
+error  = logs/stress_pipeline.err
+log    = logs/stress_pipeline.log
 
 # Resource requests
 request_cpus = 4
@@ -22,7 +22,6 @@ request_gpus = 1
 getenv = True
 
 # Set the working directory for the job
-# ❗ Change to your actual project root if different
 initialdir = /home2/hd49/multilingual-social-summary
 
 queue

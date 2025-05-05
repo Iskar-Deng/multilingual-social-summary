@@ -51,7 +51,8 @@ python src/model_train/train_mt5.py \
     --grad_accum_steps 2 \
     --num_epochs 3 \
     --log_steps 100 \
-    --num_workers 2
+    --num_workers 2 \
+    --fp16
 
 # Step 2: TL;DR Evaluation
 run_with_timer "Evaluating TL;DR test set" \
