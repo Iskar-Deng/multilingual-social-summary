@@ -47,12 +47,11 @@ run_with_timer "Fine-tuning MT5 on TL;DR" \
 python src/model_train/train_mt5.py \
     --data_path src/stress_test/tldr_train_3000.jsonl \
     --output_dir checkpoints/mt5_st \
-    --batch_size 16 \
+    --batch_size 2 \
     --grad_accum_steps 2 \
     --num_epochs 3 \
     --log_steps 100 \
-    --num_workers 2 \
-    --fp16
+    --num_workers 0 \
 
 # Step 2: TL;DR Evaluation
 run_with_timer "Evaluating TL;DR test set" \

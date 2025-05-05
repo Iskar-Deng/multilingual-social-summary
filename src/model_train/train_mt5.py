@@ -1,6 +1,7 @@
 import os
 import json
 import argparse
+import torch
 import pandas as pd
 from tqdm import tqdm
 from transformers import (
@@ -39,19 +40,13 @@ def preprocess(example, tokenizer):
         example["input_text"],
         truncation=True,
         padding="max_length",
-        max_length=MAX_INPUT_LENGTH
+        max_length=MAX_INPUT_LENGTH,
+        text_target=example["summary_text"]
     )
-    with tokenizer.as_target_tokenizer():
-        labels = tokenizer(
-            example["summary_text"],
-            truncation=True,
-            padding="max_length",
-            max_length=MAX_OUTPUT_LENGTH
-        )
-    model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
 def main():
+    print("CUDA available:", torch.cuda.is_available())
     parser = argparse.ArgumentParser(description="Fine-tune MT5 on summarization task.")
     parser.add_argument("--data_path", type=str, default=DEFAULT_DATA_PATH)
     parser.add_argument("--output_dir", type=str, default=DEFAULT_OUTPUT_DIR)
@@ -66,7 +61,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(LOG_DIR, exist_ok=True)
 
-    tokenizer = MT5Tokenizer.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = MT5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
     dataset = load_dataset(args.data_path)
@@ -96,7 +91,6 @@ def main():
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        tokenizer=tokenizer,
         data_collator=DataCollatorForSeq2Seq(tokenizer, model)
     )
 
