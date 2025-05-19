@@ -21,6 +21,10 @@ This end-to-end workflow allows us to assess the impact of multilingual data aug
 -  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)  
   A multilingual Reddit dataset containing code-switched entries across several languages, without human-written summaries.
 
+## Augmented Data
+
+- https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu
+
 ## Model
 
 - [google/mt5-base](https://huggingface.co/google/mt5-base)  
