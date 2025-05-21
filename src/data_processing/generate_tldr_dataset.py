@@ -72,7 +72,14 @@ def tokenize_dataset(input_path, tokenizer, max_input_length=512, max_output_len
 
                 input_ids_list.append(input_enc["input_ids"])
                 attention_mask_list.append(input_enc["attention_mask"])
-                label_ids_list.append(output_enc["input_ids"])
+
+                # Mask output padding tokens with -100
+                labels = output_enc["input_ids"]
+                labels = [
+                    token if token != tokenizer.pad_token_id else -100
+                    for token in labels
+                ]
+                label_ids_list.append(labels)
 
                 subreddit_id = data.get("subreddit_id")
                 if subreddit_id:
@@ -85,6 +92,7 @@ def tokenize_dataset(input_path, tokenizer, max_input_length=512, max_output_len
             except json.JSONDecodeError:
                 print(f"Error decoding line {idx}")
                 error_lines += 1
+
 
     dataset = Dataset.from_dict({
         "input_ids": input_ids_list,
