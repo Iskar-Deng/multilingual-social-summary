@@ -1,11 +1,11 @@
-CodeSwitch-Reddit Dataset Statistcs
+CodeSwitch-Reddit Test Dataset Statistics
 
-Total posts: 135703
-Unique Subreddits: 52
-Unique Primary Languages: English, Indonesian, Greek, Russian, Romanian, Tagalog
-Unique Secondary Languages: Greek, Indonesian, English, Russian, Romanian, Tagalog
-+------+-----+--------+-------------------+--------+--------------------+
-|      | Min |  Max   |       Mean        | Median |   Std. Deviation   |
-+------+-----+--------+-------------------+--------+--------------------+
-| Text | 3.0 | 3519.0 | 132.6300597628645 |  95.0  | 133.63872772454226 |
-+------+-----+--------+-------------------+--------+--------------------+
+Total Posts: 135703
+Unique Primary Languages: Romanian, Russian, Indonesian, Tagalog, English, Greek
+Unique Secondary Languages: Romanian, Russian, Indonesian, Tagalog, English, Greek
+
++------+-----+-------+-------------------+--------+-------------------+
+|      | Min |  Max  |       Mean        | Median |  Std. Deviation   |
++------+-----+-------+-------------------+--------+-------------------+
+| Text | 4.0 | 512.0 | 128.1524210960701 |  96.0  | 99.63701736824265 |
++------+-----+-------+-------------------+--------+-------------------+
