@@ -132,6 +132,7 @@ This script will:
 - Evaluate on code-switched data using LaSE (100 test samples)
 - Log time, GPU, CPU usage, and evaluation results to `logs/`
 
+- **Note:**: Update to your absolute path.
 ## How to Run
 
 ### 1. Setup environment
