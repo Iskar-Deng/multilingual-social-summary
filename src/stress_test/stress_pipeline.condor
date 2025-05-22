@@ -1,0 +1,23 @@
+# stress_pipeline.submit
+
+Universe        = vanilla
+Arguments       = src/stress_test/stress_pipeline.sh
+
+# Path to your working directory (update to your absolute path)
+Initialdir     = /home2/hd49/multilingual-social-summary
+
+# Output, error, and log files
+Output         = logs/stress_pipeline.out
+Error          = logs/stress_pipeline.err
+Log           = logs/stress_pipeline.condor.log
+
+# Resource requests
+RequestCpus    = 4
+RequestMemory  = 16 GB
+RequestGpus    = 1
+
+# Allow long runtime jobs (in seconds, here 24 hours)
++MaxRuntime    = 86400
+
+# Queue the job
+Queue
