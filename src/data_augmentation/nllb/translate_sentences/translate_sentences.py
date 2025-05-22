@@ -9,19 +9,25 @@ import random
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from tqdm import tqdm
 import nltk
-nltk.download("punkt")
-nltk.download("punkt_tab")  
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+try:
+    nltk.data.find("tokenizers/punkt_tab")
+except LookupError:
+    nltk.download("punkt_tab")
 from nltk.tokenize import sent_tokenize
 
 MODEL_NAME = "facebook/nllb-200-distilled-600M"
 SRC_LANG = "eng_Latn"
 
 LANG_CODES = {
-    "tl": "tgl_Latn",      # Tagalog
-    "el": "ell_Grek",      # Greek
-    "ro": "ron_Latn",      # Romanian
-    "id": "ind_Latn",      # Indonesian
-    "ru": "rus_Cyrl",      # Russian
+    "tl": "tgl_Latn",      
+    "el": "ell_Grek",     
+    "ro": "ron_Latn",      
+    "id": "ind_Latn",      
+    "ru": "rus_Cyrl",      
 }
 LANG_NAMES = {
     "tl": "Tagalog",
@@ -34,8 +40,9 @@ LANG_NAMES = {
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_NAME,
-        src_lang=SRC_LANG    
+        src_lang=SRC_LANG    # tells the tokenizer your source is English by default
     )
+    # AutoModelForSeq2SeqLM loads the correct translation model class
     model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
     return tokenizer, model
@@ -51,9 +58,14 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
-#Randomly select sentences and a language to translate the input text to
 def translate_random_lang(dataset, seed, use_gpu):
-    device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
+    if use_gpu and torch.cuda.is_available():
+        device = "cuda"
+    elif use_gpu and torch.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+
     tokenizer, model = load_model_and_tokenizer()
     model.to(device)
     random.seed(seed)
@@ -65,8 +77,8 @@ def translate_random_lang(dataset, seed, use_gpu):
         num_to_translate = random.randint(1, max(1, len(sentences) // 2))
         selected_idxs = random.sample(range(len(sentences)), num_to_translate)
         lang = random.choice(list(LANG_CODES.keys()))
+        tgt_lang_code = LANG_CODES[lang]
         for idx in selected_idxs:
-            tgt_lang_code = LANG_CODES[lang]
             translated = translate_text(sentences[idx], tokenizer, model, tgt_lang_code)
             sentences[idx] = translated 
         mixed_input = " ".join(sentences)
@@ -97,6 +109,11 @@ if __name__ == "__main__":
     )
     parser.add_argument('--use_gpu', action='store_true', help='Use GPU for inference')
     args = parser.parse_args()
+    
+    if torch.cuda.is_available():
+        print("GPU is available")
+    else:
+        print("GPU is not available")
 
     with open(args.input, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
