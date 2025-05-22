@@ -16,17 +16,15 @@ def count_lines(file_path):
         total_line = sum(1 for _ in f)
         return total_line 
 
-# NLLB model setup
 MODEL_NAME = "facebook/nllb-200-distilled-600M"
 SRC_LANG = "eng_Latn"
 
-# Define target languages with lang codes and names
 LANG_CODES = {
-    "tl": "tgl_Latn",      # Tagalog
-    "el": "ell_Grek",      # Greek
-    "ro": "ron_Latn",      # Romanian
-    "id": "ind_Latn",      # Indonesian
-    "ru": "rus_Cyrl",      # Russian
+    "tl": "tgl_Latn",      
+    "el": "ell_Grek",      
+    "ro": "ron_Latn",      
+    "id": "ind_Latn",      
+    "ru": "rus_Cyrl",      
 }
 LANG_NAMES = {
     "tl": "Tagalog",
@@ -39,9 +37,8 @@ LANG_NAMES = {
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_NAME,
-        src_lang=SRC_LANG    # tells the tokenizer your source is English by default
+        src_lang=SRC_LANG    
     )
-    # AutoModelForSeq2SeqLM loads the correct translation model class
     model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
     return tokenizer, model
@@ -54,7 +51,6 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
        out = model.generate(
             **inputs,
             forced_bos_token_id=bos_id,
-            #max_length=inputs["input_ids"].shape[-1] + 50  # optional
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 def translate_fixed_lang(total_line, dataset, use_gpu):
@@ -66,7 +62,6 @@ def translate_fixed_lang(total_line, dataset, use_gpu):
     per_lang = int(total_line / 5)
     tokenizer, model = load_model_and_tokenizer()
     model.to(device)
-    # Build deterministic sequence: per_lang × each language key
     langs = list(LANG_CODES.keys())
     seq = []
     for lang in langs:
@@ -77,8 +72,6 @@ def translate_fixed_lang(total_line, dataset, use_gpu):
                             total=len(seq),
                             desc="Translating entries",
                             unit="entry"):
-        
-        # Reconstruct from tokens if available
         tokens = entry.get("input_tokens")
         if tokens:
             raw = tokenizer.convert_tokens_to_string(tokens)
@@ -109,16 +102,13 @@ if __name__ == "__main__":
     parser.add_argument('--use_gpu', action='store_true', help='Use GPU for inference')
     args = parser.parse_args()
 
-    # Load data
     with open(args.input, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
 
     total_line = count_lines(args.input)
 
-    # Translate
     translated = translate_fixed_lang(total_line, data,args.use_gpu)
 
-    # Save
     with jsonlines.open(args.output, mode='w') as writer:
         writer.write_all(translated)
 
