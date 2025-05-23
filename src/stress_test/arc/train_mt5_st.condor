@@ -1,0 +1,27 @@
+universe = vanilla
+
+# Path to the shell script that runs fine-tuning and evaluations
+executable = src/stress_test/stress_pipeline.sh
+
+# Output and error logs
+output = logs/stress_pipeline.out
+error  = logs/stress_pipeline.err
+log    = logs/stress_pipeline.log
+
+# Resource requests
+request_cpus = 4
+request_memory = 32 GB
+request_gpus = 1
++GPUJob = true
++IsCUDAJob = true
+
+# Allow internet access (needed to download Huggingface models if necessary)
++WantInternetAccess = true
+
+# Use current environment variables (important if using virtualenv)
+getenv = True
+
+# Set the working directory for the job
+initialdir = /home2/hd49/multilingual-social-summary
+
+queue

@@ -21,6 +21,10 @@ This end-to-end workflow allows us to assess the impact of multilingual data aug
 -  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)  
   A multilingual Reddit dataset containing code-switched entries across several languages, without human-written summaries.
 
+## Augmented Data
+
+- https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu
+
 ## Model
 
 - [google/mt5-base](https://huggingface.co/google/mt5-base)  
@@ -49,11 +53,6 @@ This project is structured to run in a specific environment to ensure compatibil
 - **PyTorch**: 1.10.2
 
 Please ensure that any new dependencies added are compatible with these versions. If you need to install new packages for local experiments, verify their compatibility with **Python 3.6.8** before adding them. It's recommended to run and test code directly on the server to maintain consistency.
-
-**Note:** 
-- Only the `patas-gn3.ling.washington.edu` node supports Python 3.6.8. Other nodes are running **Python 3.4**.
-- Since Condor jobs are scheduled on the `patas-gn3` node, which uses **Python 3.6.8** by default, we will proceed based on this environment.
-- **Downgrading to Python 3.4** is not feasible due to compatibility issues with key libraries.
 
 ---
 
@@ -88,6 +87,15 @@ src/
 │   ├── train_mt5.py             # Training script for the MT5 model
 │   ├── train_mt5.condor         # Condor job script for training
 │   └── train_mt5.sh             # Shell script for training
+├── stress_test
+│   ├── stress_pipeline.sh       # Full training and eval pipeline
+│   ├── stress_pipeline.submit   # HTCondor submit script
+│   ├── stress_pipeline.slurm    # SLURM submit script (Hyak)
+│   ├── evaluate_tldr.py         # TL;DR evaluation with BERTScore
+│   ├── evaluate_codeswitch.py   # CodeSwitch evaluation with LaSE
+│   ├── tldr_train_3000.jsonl    # Sample training data
+│   ├── tldr_test_300.jsonl      # Sample TL;DR test data
+│   ├── codeswitch_test_100.jsonl # Sample CodeSwitch test data
 ```
 
 ### Key Folders and Files:
@@ -96,7 +104,35 @@ src/
 - **evaluation**: Contains evaluation scripts for BERTScore, LaSE, and ROUGE, as well as related data.
 - **model_test**: Scripts to test the performance of fine-tuned and HuggingFace models.
 - **model_train**: Scripts to train the MT5 model and associated Condor jobs.
+- **stress_test**: Scripts to test the pipeline.
 
+## How to Run Stress Test Pipeline (Update)
+
+### 1. On Patas (Condor)
+
+```bash
+condor_submit src/stress_test/stress_pipeline.submit
+```
+
+### 2. On Hyak (SLURM)
+
+```bash
+sbatch src/stress_test/stress_pipeline.slurm
+```
+
+### 3. Locally or directly on a node (debugging only)
+
+```bash
+bash src/stress_test/stress_pipeline.sh
+```
+
+This script will:
+- Fine-tune the model on TL;DR data (3,000 training samples)
+- Evaluate the fine-tuned model on TL;DR using BERTScore (300 test samples)
+- Evaluate on code-switched data using LaSE (100 test samples)
+- Log time, GPU, CPU usage, and evaluation results to `logs/`
+
+- **Note:**: Update to your absolute path.
 ## How to Run
 
 ### 1. Setup environment
