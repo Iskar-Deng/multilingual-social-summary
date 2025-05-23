@@ -6,20 +6,20 @@ import torch
 import random
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from tqdm import tqdm
-import nltk
-from nltk import word_tokenize, pos_tag
-nltk.download("averaged_perceptron_tagger_eng")
+import spacy
+import os
 
+nlp = spacy.load("en_core_web_sm")
 
 MODEL_NAME = "facebook/nllb-200-distilled-600M"
 SRC_LANG = "eng_Latn"
 
 LANG_CODES = {
-    "tl": "tgl_Latn",      # Tagalog
-    "el": "ell_Grek",      # Greek
-    "ro": "ron_Latn",      # Romanian
-    "id": "ind_Latn",      # Indonesian
-    "ru": "rus_Cyrl",      # Russian
+    "tl": "tgl_Latn",      
+    "el": "ell_Grek",      
+    "ro": "ron_Latn",      
+    "id": "ind_Latn",      
+    "ru": "rus_Cyrl",      
 }
 LANG_NAMES = {
     "tl": "Tagalog",
@@ -32,13 +32,21 @@ LANG_NAMES = {
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_NAME,
-        src_lang=SRC_LANG        )
+        src_lang=SRC_LANG    
+    )
+    
     model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
     return tokenizer, model
 
 def translate_text(text, tokenizer, model, tgt_lang_code):
+    device = next(model.parameters()).device
+
+    print("Using device:", device)
+    print("Torch sees CUDA?:", torch.cuda.is_available())
+    print("Model on:", device)
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+    
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     bos_id = tokenizer.convert_tokens_to_ids(tgt_lang_code)
     with torch.no_grad():       
@@ -48,7 +56,6 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
-#Randomly select nouns and a language to translate the input text to
 def translate_random_lang(dataset, seed, use_gpu):
     device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
     tokenizer, model = load_model_and_tokenizer()
@@ -58,11 +65,14 @@ def translate_random_lang(dataset, seed, use_gpu):
 
     for entry in tqdm(dataset, desc="Translating entries", unit="entry"):
         raw = entry.get("input_text", "")
-        words = word_tokenize(raw)
-        tags = pos_tag(words)
+        doc = nlp(raw)
+        words = [token.text for token in doc]
 
-    
-        noun_indices = [i for i, (_, tag) in enumerate(tags) if tag == ("NN" or "NNS")]
+        noun_indices = [
+            i for i, token in enumerate(doc)
+            if token.pos_ == "NOUN"
+        ]
+
         if not noun_indices:
             out.append(entry)
             continue
@@ -99,12 +109,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-i", "--input", required=True,
-        help="Path to source JSON (list of {input_text, summary_text})."
+        help="Path to a source JSONL file or directory containing .jsonl files."
     )
     parser.add_argument(
-        "-o", "--output", default="translated_dataset.json",
-        help="Path to write translated JSON."
+        "-o", "--output", required=True,
+        help="Full path to the output JSONL file."
     )
+
     parser.add_argument(
         "--seed", type=int, default=42,
         help="Random seed for reproducible language assignment."
@@ -112,12 +123,27 @@ if __name__ == "__main__":
     parser.add_argument('--use_gpu', action='store_true', help='Use GPU for inference')
     args = parser.parse_args()
 
-    with open(args.input, "r", encoding="utf-8") as f:
-        data = [json.loads(line) for line in f]
+    if not os.path.exists(os.path.dirname(args.output)):
+        os.makedirs(args.output, exist_ok=True)
 
-    translated = translate_random_lang(data, args.seed,args.use_gpu)
+    if os.path.isdir(args.input):
+        files = sorted([f for f in os.listdir(args.input) if f.endswith(".jsonl")])
+    else:
+        files = [args.input]
 
-    with jsonlines.open(args.output, mode='w') as writer:
-        writer.write_all(translated)
+    for fname in files:
+        input_path = fname if os.path.isfile(fname) else os.path.join(args.input, fname)
 
-    print(f"Done — translated {len(translated)} entries → {args.output}")
+        output_path = args.output
+        data = []
+        with open(input_path, "r", encoding="utf-8") as f:
+            for line in f:
+                data.append(json.loads(line))
+
+        translated = translate_random_lang(data, args.seed, args.use_gpu)
+
+        with jsonlines.open(output_path, mode='w') as writer:
+            writer.write_all(translated)
+
+        print(f"Wrote: {output_path}")
+
