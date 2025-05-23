@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-#Translate 20 entries for each language 1-20:Tagalog 21-40:Greek 41-60:Romanian 61-80:Indonesian 81-100:Russian
+#Translate 20% entries for each language.
+#Each block is fully translated into a fixed target language:
+#the first block into Tagalog, the second into Greek, the third into Romanian, the fourth into Indonesian, and the fifth into Russian.
 
 
 import json

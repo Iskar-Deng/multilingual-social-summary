@@ -192,13 +192,13 @@ Example format of `output_file.jsonl` (each line is a JSON object):
 For example, to run multilingual input translation:
 
 ```bash
-python src/data_augmentation/marian/translate_muiltilingual_nouns/translate_muiltilingual_nouns.py data/corpus-webis-tldr-17.json output.jsonl 42
+python src/data_augmentation/nllb/translate_nouns/translate_nouns.py data/corpus-webis-tldr-17.json output.jsonl 42
 ```
 
 Or submit via Condor:
 
 ```bash
-condor_submit src/data_augmentation/marian/translate_muiltilingual_nouns/translate_muiltilingual_nouns.cmd
+condor_submit src/data_augmentation/nllb/translate_nouns/translate_nouns.cmd
 ```
 
 ---
