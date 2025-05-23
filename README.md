@@ -23,7 +23,7 @@ This end-to-end workflow allows us to assess the impact of multilingual data aug
 
 ## Augmented Data
 
-- https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu
+- https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu?usp=drive_link
 
 ## Model
 
@@ -69,6 +69,21 @@ src/
 │   ├── analyze_tldr.py            # Script to analyze TLDR data
 │   ├── analyze_code-switch.py     # Script to analyze CodeSwitch data
 │   ├── generate_dataset.py        # Script to generate datasets
+├── data_split
+│   ├── generate_indices.py         # Script to generate random test set indices
+│   ├── generate_indices.slurm      # Slurm script to submit for index generation
+│   ├── split_by_index.py           # Script to split test/train sets by index
+│   ├── split_by_index.slurm        # Slrum script to submit for test/train splits
+├── data_tokenization
+│   ├── clean_tokenized.py                # Script to remove unnecessary fields in tokenized tldr
+│   ├── tokenize_tldr.py                  # Slurm script to tokenize tldr
+│   ├── tokenize_tldr.slurm               # Slurm script to submit for tldr tokenization
+│   ├── tokenize_trans_full.py            # Slurm script to tokenize trans_full
+│   ├── tokenize_trans_full.slurm         # Slurm script to submit for trans_full tokenization
+│   ├── tokenize_trans_noun.py            # Slurm script to tokenize trans_noun
+│   ├── tokenize_trans_noun.slurm         # Slurm script to submit for trans_noun tokenization
+│   ├── tokenize_trans_sent.py            # Slurm script to tokenize trans_sent
+│   ├── tokenize_trans_sent.slurm         # Slurm script to submit for trans_sent tokenization
 ├── evaluation
 │   ├── evaluation_scripts
 │   │   ├── eval_bert_score.py  # BERTScore evaluation script
@@ -87,6 +102,15 @@ src/
 │   ├── train_mt5.py             # Training script for the MT5 model
 │   ├── train_mt5.condor         # Condor job script for training
 │   └── train_mt5.sh             # Shell script for training
+├── model_train_tokenized
+│   ├── train_mt5_tok.py            # Training script for the MT5 model on tokenized tldr
+│   ├── train_mt5_tok.slurm         # Slurm script to submit for training
+│   ├── train_trans_full.py         # Training script for the MT5 model on tokenized trans_full
+│   ├── train_trans_full.slurm      # Slurm script to submit for training
+│   ├── train_trans_noun.py         # Training script for the MT5 model on tokenized trans_noun
+│   ├── train_trans_noun.slurm      # Slurm script to submit for training
+│   ├── train_trans_sent.py         # Training script for the MT5 model on tokenized trans_sent
+│   └── train_trans_sent.slurm      # Slurm script to submit for training
 ├── stress_test
 │   ├── stress_pipeline.sh       # Full training and eval pipeline
 │   ├── stress_pipeline.submit   # HTCondor submit script
@@ -146,24 +170,143 @@ pip install -r requirements.txt
 
 ### 2. Prepare datasets
 
+#### Download datasets
 - Download TL;DR dataset: https://zenodo.org/records/1043504
 - Download CodeSwitch-Reddit dataset: https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz
+- Download augmented TL;DR datasets: https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu?usp=drive_link
 
 Unpack and place them under a `data/` directory.
+
+#### Tokenize datasets
+Example commands are for training sets. Modify ```data_path``` to tokenize test sets.
+
+- Tokenize TL;DR 
+```bash
+python src/data_tokenization/tokenize_tldr.py \
+  --data_path data/splits/tldr_train.jsonl \
+  --output_path data/splits/tokenized_train
+```
+Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/data_tokenization/tokenize_tldr.slurm
+```
+
+- Clean tokenized TL;DR (Optional) to remove unnecessary fields
+```bash
+python src/data_tokenization/clean_tokenized.py
+```
+
+- Tokenize translate_full
+```bash
+python src/data_tokenization/tokenize_trans_full.py \
+  --data_path data/splits/trans_full_train.jsonl \
+  --output_path data/splits/tokenized_train
+```
+Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/data_tokenization/tokenize_trans_full.slurm
+```
+
+- Tokenize translate_nouns
+```bash
+python src/data_tokenization/tokenize_trans_noun.py \
+  --data_path data/splits/trans_noun_train.jsonl \
+  --output_path data/splits/tokenized_train
+```
+Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/data_tokenization/tokenize_trans_noun.slurm
+```
+
+- Tokenize translate_sentence
+```bash
+python src/data_tokenization/tokenize_trans_sent.py \
+  --data_path data/splits/trans_sent_train.jsonl \
+  --output_path data/splits/tokenized_train
+```
+Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/data_tokenization/tokenize_trans_sent.slurm
+```
 
 ### 3. Train baseline model
 
 ```bash
-python src/model_train/train_mt5.py --config configs/train_config.yaml
+python3 src/model_train_tokenized/train_mt5_tok.py \
+  --tokenized_path data/splits/tokenized_train_clean \
+  --output_dir checkpoints/mt5_base \
+  --batch_size 4 \
+  --grad_accum_steps 4 \
+  --num_epochs 2 \
+  --log_steps 100 \
+  --num_workers 4 
 ```
 
-Or submit as a Condor job:
+Or submit as a Slurm job on Hyak:
 
 ```bash
-condor_submit src/model_train/train_mt5.condor
+sbatch src/model_train_tokenized/train_mt5_tok.slurm
 ```
 
-### 4. Run evaluation
+### 4. Train augmented model
+#### With translate_full dataset
+```bash
+python3 /src/model_train_tokenized/train_trans_full.py \
+  --tokenized_path /data/splits/tokenized_train/trans_full \
+  --output_dir /checkpoints/trans_full \
+  --batch_size 4 \
+  --grad_accum_steps 4 \
+  --num_epochs 2 \
+  --log_steps 100 \
+  --num_workers 4 
+```
+
+- Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/model_train_tokenized/train_trans_full.slurm
+```
+
+#### With translate_nouns dataset
+```bash
+python3 /src/model_train_tokenized/train_trans_noun.py \
+  --tokenized_path /data/splits/tokenized_train/trans_noun \
+  --output_dir /checkpoints/trans_noun \
+  --batch_size 4 \
+  --grad_accum_steps 4 \
+  --num_epochs 2 \
+  --log_steps 100 \
+  --num_workers 4 
+```
+
+- Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/model_train_tokenized/train_trans_noun.slurm
+```
+#### With translate_sentence dataset
+```bash
+python3 /src/model_train_tokenized/train_trans_sent.py \
+  --tokenized_path /data/splits/tokenized_train/trans_sent \
+  --output_dir /checkpoints/trans_sent \
+  --batch_size 4 \
+  --grad_accum_steps 4 \
+  --num_epochs 2 \
+  --log_steps 100 \
+  --num_workers 4 
+```
+
+- Or submit as a Slurm job on Hyak:
+
+```bash
+sbatch src/model_train_tokenized/train_trans_sent.slurm
+```
+
+### 5. Run evaluation
 
 - With references (TL;DR):
 
@@ -187,7 +330,7 @@ Example format of `output_file.jsonl` (each line is a JSON object):
 {"input_text": "This is the input post text.", "summary_text": "This is the predicted summary."}
 ```
 
-### 5. Run data augmentation (optional)
+### 6. Run data augmentation (optional)
 
 For example, to run multilingual input translation:
 
