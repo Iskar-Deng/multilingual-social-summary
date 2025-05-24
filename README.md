@@ -134,7 +134,7 @@ src/
 - **stress_test**: Scripts to test the pipeline.
 
 ## How to Run Stress Test Pipeline (Update)
-- **Note**: Update to your absolute path.
+- **Note**: Update to your absolute path. See output in condor/slurm logs.
 ### 1. On Patas (Condor)
 
 ```bash
@@ -161,7 +161,7 @@ This script will:
 
 
 ## How to Run (Update)
-- **Note**: Update to your absolute path.
+- **Note**: Update to your absolute path. 
 ### 1. Setup environment
 
 - Use Python 3.6.8.
@@ -181,7 +181,7 @@ pip install -r requirements.txt
 Unpack and place them under a `data/` directory.
 
 #### Tokenize datasets
-Example commands are for training sets. Modify ```data_path``` to tokenize test sets.
+Example commands are for training sets. Modify ```data_path``` to tokenize test sets. Modify ```output_path``` for outputs.
 
 ##### Tokenize TL;DR 
 ```bash
