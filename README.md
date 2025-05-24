@@ -6,7 +6,7 @@
 
 This project explores multilingual summarization of user-generated content on Reddit, with a focus on handling code-switched, multilingual, and conversational posts.
 
-We fine-tune the [mT5-base model](https://huggingface.co/google/mt5-base) on the English TL;DR dataset as a baseline system. To enable multilingual and informal summarization, we augment the TL;DR training data using five translation strategies that cover multiple target languages drawn from the CodeSwitch-Reddit dataset.
+We fine-tune the [mT5-base model](https://huggingface.co/google/mt5-base) on the English TL;DR dataset as a baseline system. To enable multilingual and informal summarization, we augment the TL;DR training data using three translation strategies that cover multiple target languages drawn from the CodeSwitch-Reddit dataset.
 
 The system is evaluated through two complementary tracks:
 - **Reference-based evaluation** on English TL;DR test data using BERTScore;
