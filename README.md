@@ -131,7 +131,7 @@ src/
 - **stress_test**: Scripts to test the pipeline.
 
 ## How to Run Stress Test Pipeline (Update)
-
+- **Note**: Update to your absolute path.
 ### 1. On Patas (Condor)
 
 ```bash
@@ -156,9 +156,9 @@ This script will:
 - Evaluate on code-switched data using LaSE (100 test samples)
 - Log time, GPU, CPU usage, and evaluation results to `logs/`
 
-- **Note:**: Update to your absolute path.
-## How to Run
 
+## How to Run (Update)
+- **Note**: Update to your absolute path.
 ### 1. Setup environment
 
 - Use Python 3.6.8.
@@ -180,54 +180,54 @@ Unpack and place them under a `data/` directory.
 #### Tokenize datasets
 Example commands are for training sets. Modify ```data_path``` to tokenize test sets.
 
-- Tokenize TL;DR 
+##### Tokenize TL;DR 
 ```bash
 python src/data_tokenization/tokenize_tldr.py \
   --data_path data/splits/tldr_train.jsonl \
   --output_path data/splits/tokenized_train
 ```
-Or submit as a Slurm job on Hyak:
+- Or submit as a Slurm job on Hyak:
 
 ```bash
 sbatch src/data_tokenization/tokenize_tldr.slurm
 ```
 
-- Clean tokenized TL;DR (Optional) to remove unnecessary fields
+##### Clean tokenized TL;DR (Optional) to remove unnecessary fields
 ```bash
 python src/data_tokenization/clean_tokenized.py
 ```
 
-- Tokenize translate_full
+##### Tokenize translate_full
 ```bash
 python src/data_tokenization/tokenize_trans_full.py \
   --data_path data/splits/trans_full_train.jsonl \
   --output_path data/splits/tokenized_train
 ```
-Or submit as a Slurm job on Hyak:
+- Or submit as a Slurm job on Hyak:
 
 ```bash
 sbatch src/data_tokenization/tokenize_trans_full.slurm
 ```
 
-- Tokenize translate_nouns
+##### Tokenize translate_nouns
 ```bash
 python src/data_tokenization/tokenize_trans_noun.py \
   --data_path data/splits/trans_noun_train.jsonl \
   --output_path data/splits/tokenized_train
 ```
-Or submit as a Slurm job on Hyak:
+- Or submit as a Slurm job on Hyak:
 
 ```bash
 sbatch src/data_tokenization/tokenize_trans_noun.slurm
 ```
 
-- Tokenize translate_sentence
+##### Tokenize translate_sentence
 ```bash
 python src/data_tokenization/tokenize_trans_sent.py \
   --data_path data/splits/trans_sent_train.jsonl \
   --output_path data/splits/tokenized_train
 ```
-Or submit as a Slurm job on Hyak:
+- Or submit as a Slurm job on Hyak:
 
 ```bash
 sbatch src/data_tokenization/tokenize_trans_sent.slurm
@@ -246,7 +246,7 @@ python3 src/model_train_tokenized/train_mt5_tok.py \
   --num_workers 4 
 ```
 
-Or submit as a Slurm job on Hyak:
+- Or submit as a Slurm job on Hyak:
 
 ```bash
 sbatch src/model_train_tokenized/train_mt5_tok.slurm
@@ -343,7 +343,6 @@ Or submit via Condor:
 ```bash
 condor_submit src/data_augmentation/nllb/translate_nouns/translate_nouns.cmd
 ```
-
 ---
 
 ## Important Notes
