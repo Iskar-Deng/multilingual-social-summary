@@ -125,9 +125,12 @@ src/
 ### Key Folders and Files:
 - **data_augmentation**: Contains subfolders for MarianMT and NLLB models, and scripts for different data augmentation strategies (e.g., multilingual, monolingual).
 - **data_processing**: Scripts to generate and analyze datasets.
+- **data_split**: Scripts to split test/train.
+- **data_tokenization**: Scripts to tokenize data.
 - **evaluation**: Contains evaluation scripts for BERTScore, LaSE, and ROUGE, as well as related data.
 - **model_test**: Scripts to test the performance of fine-tuned and HuggingFace models.
 - **model_train**: Scripts to train the MT5 model and associated Condor jobs.
+- **model_train_tokenized**: Scripts to train the MT5 model on tokenized data.
 - **stress_test**: Scripts to test the pipeline.
 
 ## How to Run Stress Test Pipeline (Update)
