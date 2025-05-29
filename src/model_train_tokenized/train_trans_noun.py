@@ -46,9 +46,7 @@ def main():
     dataset = load_from_disk(args.tokenized_path)
     print(f"📊 Loaded {len(dataset)} examples from {args.tokenized_path}")
 
-    model = MT5ForConditionalGeneration.from_pretrained(
-    "/gscratch/stf/mx727/multilingual-social-summary/checkpoints/mt5_debug/checkpoint-32000"
-    )
+    model = MT5ForConditionalGeneration.from_pretrained("google/mt5-base")
     model.config.use_cache = False
     model.gradient_checkpointing_enable()
     model.to("cuda" if torch.cuda.is_available() else "cpu")
