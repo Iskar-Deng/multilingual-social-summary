@@ -57,10 +57,10 @@ def main():
                 num_lines += 1
 
                 if "summary_text" in data and "input_text" in data:
-                    reference = data["input_text"]
-                    prediction = data["summary_text"]
+                    reference = data["input"]
+                    prediction = data["summary"]
                 else:
-                    print("'summary_text' or 'input_text' not found in the data.")
+                    print("'summary' or 'input' not found in the data.")
                     sys.exit(1)
 
                 scores = evaluate_LaSE(prediction, reference, get_all_scores=True)
@@ -71,15 +71,26 @@ def main():
         print(f"File not found: {args.json_path}")
         sys.exit(1)
 
-    if not args.hide_individual_scores:
-        print("LaSE scores:")
-        print(LaSE_scores)
-        print()
+    # if not args.hide_individual_scores:
+    #     print("LaSE scores:")
+    #     print(LaSE_scores)
+    #     print()
     
     if args.get_average:
         avg_LaSE_scores = {score_type: sum(LaSE_scores[score_type]) / num_lines for score_type in LaSE_score_types}
-        print(f"\nLaSE Score averages across all summarizations:\n{avg_LaSE_scores}")
-        print()
+        # print(f"\nLaSE Score averages across all summarizations:\n{avg_LaSE_scores}")
+        # print()
+
+    filename = os.path.basename(args.prediction_path)
+    name, _ = os.path.splitext(filename)
+    out_filename = f"{name}_LaSE.txt"
+    # Save the results to a file
+    with open(out_filename, "w", encoding="utf-8") as out_file:
+        out_file.write("LaSE scores:\n")
+            for score_type, scores in LaSE_scores.items():
+                out_file.write(f"{score_type}: {scores}\n")
+        if args.get_average:
+            out_file.write(f"Average LaSE scores across all summarizations:\n{avg_LaSE_scores}\n")
 
 
 if __name__ == "__main__":

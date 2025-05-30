@@ -4,7 +4,7 @@ from transformers import logging as hf_logging
 # Suppress warnings from the transformers library
 hf_logging.set_verbosity_error()
 
-def evaluate_bert_score(prediction, reference, get_all_scores=False):
+def evaluate_bert_score(predictions, references, get_all_scores=False):
     """
     Evaluate the BERT score of the predictions against the references.
     https://huggingface.co/spaces/evaluate-metric/bertscore
@@ -23,7 +23,7 @@ def evaluate_bert_score(prediction, reference, get_all_scores=False):
     """
 
     # Compute BERTScore
-    scores = bert_score.score([prediction], [reference], model_type="microsoft/deberta-xlarge-mnli")
+    scores = bert_score.score(predictions, references, model_type="microsoft/deberta-xlarge-mnli")
     # Note: List of models can be found here: https://docs.google.com/spreadsheets/d/1RKOVpselB98Nnh_EOC4A2BYn8_201tmPODpNWu4w7xI/edit?gid=0#gid=0
 
     if get_all_scores:
