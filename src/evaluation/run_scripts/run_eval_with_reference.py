@@ -25,6 +25,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "evaluation", "evaluation_scripts")))
 from eval_bert_score import evaluate_bert_score
+from tqdm import tqdm
 
 def main():
     # Set up argument parser
@@ -54,7 +55,7 @@ def main():
 
     # Read the evaluation data file
     with open(args.json_path, "r") as f:
-        for line in f:
+        for line in tqdm(f, desc="Evaluating", unit="example"):
             data = json.loads(line)
             num_lines += 1
 

@@ -22,6 +22,7 @@ import json
 import argparse
 import sys
 import os
+from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "evaluation", "evaluation_scripts")))
 from eval_LaSE import evaluate_LaSE
@@ -51,7 +52,7 @@ def main():
 
     try:
         with open(args.json_path, "r", encoding="utf-8") as f:
-            for line in f:
+            for line in tqdm(f, desc="Evaluating", unit="example"):
                 data = json.loads(line)
                 num_lines += 1
 
