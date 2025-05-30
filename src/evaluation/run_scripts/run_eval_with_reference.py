@@ -25,7 +25,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "evaluation", "evaluation_scripts")))
 from eval_bert_score import evaluate_bert_score
-# from tqdm import tqdm
+from tqdm import tqdm
 
 def main():
     # Set up argument parser
@@ -99,11 +99,18 @@ def main():
             data = json.loads(line)
             references.append(data["summary"])
 
-    print("Finished reading files.")
-
     # Compute BERTScore for all predictions against references
     if args.bert:
-        bert_scores = evaluate_bert_score(predictions=predictions, references=references, get_all_scores=False)
+        bert_scores = []
+        num_per_iteration = 10
+        for i in tqdm(range(num_lines // num_per_iteration), desc="Evaluating BERTScore", unit="batch"):
+            start_index = i * num_per_iteration
+            end_index = start_index + num_per_iteration
+            if end_index > num_lines:
+                end_index = num_lines
+            bert_scores.extend(
+                evaluate_bert_score(predictions=predictions[start_index:end_index], references=references[start_index:end_index], get_all_scores=False).tolist()
+            )
         
     # Compute and print average scores (if enabled)
     if args.get_average:
@@ -115,9 +122,9 @@ def main():
     out_filename = f"{name}_bertscore.txt"
     # Save BERT scores to a file
     with open(out_filename, "w") as out_file:
-        out_file.write(f"BERTScore: {bert_scores}\n")
         if args.get_average:
             out_file.write(f"Average BERTScore: {avg_bert_score}\n")
+        out_file.write(f"BERTScore: {bert_scores}\n")
 
 if __name__ == "__main__":
     main()
