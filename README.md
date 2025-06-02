@@ -239,9 +239,9 @@ sbatch src/data_tokenization/tokenize_trans_sent.slurm
 ### 3. Train baseline model
 
 ```bash
-python3 src/model_train_tokenized/train_mt5_tok.py \
-  --tokenized_path data/splits/tokenized_train_clean \
-  --output_dir checkpoints/mt5_base \
+python3 /src/LoRa/lora_base.py \
+  --tokenized_path /data/splits/tokenized_train_clean \
+  --output_dir /results/LoRa-outputs/output_tldr_clean_100k \
   --batch_size 4 \
   --grad_accum_steps 4 \
   --num_epochs 2 \
@@ -252,15 +252,15 @@ python3 src/model_train_tokenized/train_mt5_tok.py \
 - Or submit as a Slurm job on Hyak:
 
 ```bash
-sbatch src/model_train_tokenized/train_mt5_tok.slurm
+sbatch src/LoRa/train_tldr.slurm
 ```
 
 ### 4. Train augmented model
 #### With translate_full dataset
 ```bash
-python3 /src/model_train_tokenized/train_trans_full.py \
+python3 /src/LoRa/lora_base.py \
   --tokenized_path /data/splits/tokenized_train/trans_full \
-  --output_dir /checkpoints/trans_full \
+  --output_dir /results/LoRa-outputs/output_trans_full_100k \
   --batch_size 4 \
   --grad_accum_steps 4 \
   --num_epochs 2 \
@@ -271,14 +271,14 @@ python3 /src/model_train_tokenized/train_trans_full.py \
 - Or submit as a Slurm job on Hyak:
 
 ```bash
-sbatch src/model_train_tokenized/train_trans_full.slurm
+sbatch src/LoRa/train_full.slurm
 ```
 
 #### With translate_nouns dataset
 ```bash
-python3 /src/model_train_tokenized/train_trans_noun.py \
+python3 /src/LoRa/lora_base.py \
   --tokenized_path /data/splits/tokenized_train/trans_noun \
-  --output_dir /checkpoints/trans_noun \
+  --output_dir /results/LoRa-outputs/output_trans_noun_100k \
   --batch_size 4 \
   --grad_accum_steps 4 \
   --num_epochs 2 \
@@ -289,13 +289,13 @@ python3 /src/model_train_tokenized/train_trans_noun.py \
 - Or submit as a Slurm job on Hyak:
 
 ```bash
-sbatch src/model_train_tokenized/train_trans_noun.slurm
+sbatch src/LoRa/train_noun.slutm
 ```
 #### With translate_sentence dataset
 ```bash
-python3 /src/model_train_tokenized/train_trans_sent.py \
+python3 /src/LoRa/lora_base.py \
   --tokenized_path /data/splits/tokenized_train/trans_sent \
-  --output_dir /checkpoints/trans_sent \
+  --output_dir /results/LoRa-outputs/output_trans_sent_100k \
   --batch_size 4 \
   --grad_accum_steps 4 \
   --num_epochs 2 \
@@ -306,7 +306,7 @@ python3 /src/model_train_tokenized/train_trans_sent.py \
 - Or submit as a Slurm job on Hyak:
 
 ```bash
-sbatch src/model_train_tokenized/train_trans_sent.slurm
+sbatch src/LoRa/train_sent.slurm
 ```
 
 ### 5. Run evaluation
