@@ -3,11 +3,11 @@ import logging
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from collections import namedtuple
-from transformers import AutoTokenizer
+from transformers import XLMRobertaTokenizer
 import langid
 
 # Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
+tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-large")
 
 # Language identifier with normalized probabilities
 identifier = langid.langid.LanguageIdentifier.from_modelstring(langid.langid.model, norm_probs=True)
@@ -26,14 +26,6 @@ class LaSEScorer(object):
     def _score_ms(self, targets, predictions, batch_size):
         """Computes batched meaning similarity score"""
 
-        # Check token length for each input separately
-        for text in targets + predictions:
-            num_tokens = len(tokenizer(text)["input_ids"])
-            if num_tokens > 512:
-                print(f"Input exceeds 512 tokens (got {num_tokens}). Returning 0.")
-                # Return zeros with the same length as the number of pairs
-                return np.zeros(len(targets))
-
         embeddings = self.labse_model.encode(targets + predictions, batch_size=batch_size, show_progress_bar=False)
         return (embeddings[:len(targets)] * embeddings[len(targets):]).sum(axis=1)
 
@@ -49,7 +41,7 @@ class LaSEScorer(object):
 
     def _score_lp(self, targets, predictions, target_lang, alpha):
         """Computes batched length penalty score"""
-        token_counts = np.asarray([len(tokenizer(s)["input_ids"]) for s in targets + predictions])
+        token_counts = np.asarray([len(tokenizer(s)) for s in targets + predictions])
         target_token_counts = token_counts[:len(targets)]
         prediction_token_counts = token_counts[len(targets):]
 
