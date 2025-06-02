@@ -9,13 +9,14 @@ Usage:
     python run_scripts/run_eval_with_reference.py <path_to_prediction_jsonl> <path_to_reference_jsonl> --bert [--get_average] [--hide_individual_scores]
 
 Arguments:
-    json_path: Path to the JSON file containing input and summary fields.
+    prediction_path: Path to the JSON file containing model prediction data. 
+    reference_path: Path to the JSON file containing reference data. 
     --bert: Enable BERTScore evaluation.
     --get_average: Compute and display average scores across all examples.
     --hide_individual_scores: Suppress printing individual scores for each evaluation.
 
 Notes:
-- The input JSONL file must contain "input_text" and "summary_text" fields.
+- The prediction and reference JSON files must contain a "summary" field.
 - Currently only BERTScore evaluation is supported.
 """
 
@@ -47,40 +48,6 @@ def main():
     if not args.bert:
         print("No evaluation metric selected. Use --bert.")
         sys.exit(1)
-
-    # # Initialize score dictionary
-    # score_types = ["f1"]  # Only compute F1 score (simplified version)
-    # bert_scores = {score_type: [] for score_type in score_types}
-    
-    # num_lines = 0  # Count total number of samples
-
-    # # Read the evaluation data file
-    # with open(args.json_path, "r") as f:
-    #     for line in tqdm(f, desc="Evaluating", unit="example"):
-    #         data = json.loads(line)
-    #         num_lines += 1
-
-    #         # Get reference and prediction
-    #         if "summary_text" in data and "reference_text" in data:
-    #             reference = data["reference_text"]
-    #             prediction = data["summary_text"]
-    #         else:
-    #             print("'summary_text' or 'reference_text' not found in the data.")
-    #             sys.exit(1)
-
-    #         # Compute BERTScore
-    #         if args.bert:
-    #             scores = evaluate_bert_score(prediction=prediction, reference=reference, get_all_scores=True)
-    #             for score_type, score in zip(["precision", "recall", "f1"], scores):
-    #                 if score_type in score_types:
-    #                     bert_scores[score_type].append(score.item())
-
-    # # Print individual scores (if not hidden)
-    # if not args.hide_individual_scores:
-    #     if args.bert:
-    #         print("BERT scores:")
-    #         print(bert_scores)
-    #         print()
     
     num_lines = 0  # Count total number of samples
     predictions = []

@@ -14,7 +14,7 @@ Arguments:
     --hide_individual_scores: Suppress printing individual scores.
 
 Notes:
-- The input JSONL file must contain "input_text" and "summary_text" fields.
+- The input JSONL file must contain "input" and "summary" fields.
 - Currently only LaSE evaluation is supported.
 """
 
@@ -44,10 +44,8 @@ def main():
     if not args.LaSE:
         print("No evaluation metric selected. Use --LaSE.")
         sys.exit(1)
-    
-    LaSE_score_types = ["LaSE"]  # Simplified to only LaSE; omitting ms, lc, lp components
-    LaSE_scores = {score_type: [] for score_type in LaSE_score_types}
-    
+
+    LaSE_scores = []
     num_lines = 0
 
     try:
@@ -56,41 +54,31 @@ def main():
                 data = json.loads(line)
                 num_lines += 1
 
-                if "summary_text" in data and "input_text" in data:
+                if "summary" in data and "input" in data:
                     reference = data["input"]
                     prediction = data["summary"]
                 else:
                     print("'summary' or 'input' not found in the data.")
                     sys.exit(1)
 
-                scores = evaluate_LaSE(prediction, reference, get_all_scores=True)
-                for score_type, score in scores.items():
-                    if score_type in LaSE_score_types:
-                        LaSE_scores[score_type].append(float(score))
+                print(f"Evaluating {num_lines}", file=sys.stderr)
+                LaSE_score = evaluate_LaSE(prediction, reference, get_all_scores=False) 
+                LaSE_scores.append(LaSE_score)
     except FileNotFoundError:
         print(f"File not found: {args.json_path}")
         sys.exit(1)
 
-    # if not args.hide_individual_scores:
-    #     print("LaSE scores:")
-    #     print(LaSE_scores)
-    #     print()
-    
-    if args.get_average:
-        avg_LaSE_scores = {score_type: sum(LaSE_scores[score_type]) / num_lines for score_type in LaSE_score_types}
-        # print(f"\nLaSE Score averages across all summarizations:\n{avg_LaSE_scores}")
-        # print()
-
-    filename = os.path.basename(args.prediction_path)
+    filename = os.path.basename(args.json_path)
     name, _ = os.path.splitext(filename)
     out_filename = f"{name}_LaSE.txt"
+
     # Save the results to a file
     with open(out_filename, "w", encoding="utf-8") as out_file:
-        out_file.write("LaSE scores:\n")
-            for score_type, scores in LaSE_scores.items():
-                out_file.write(f"{score_type}: {scores}\n")
         if args.get_average:
-            out_file.write(f"Average LaSE scores across all summarizations:\n{avg_LaSE_scores}\n")
+            avg_LaSE_score = sum(LaSE_scores) / num_lines
+            out_file.write(f"Average LaSE scores across all summarizations: {avg_LaSE_score}\n")
+        if not args.hide_individual_scores:
+            out_file.write(f"LaSE_scores: {LaSE_scores}")
 
 
 if __name__ == "__main__":

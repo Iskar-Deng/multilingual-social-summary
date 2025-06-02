@@ -24,7 +24,7 @@ def evaluate_bert_score(predictions, references, get_all_scores=False):
     """
     # Compute BERTScore
     device = "mps" if torch.backends.mps.is_available() else None
-    scores = bert_score.score(predictions, references, model_type="microsoft/deberta-xlarge-mnli", device=device)
+    scores = bert_score.score(predictions, references, model_type="allenai/longformer-large-4096-finetuned-triviaqa", device=device)
     # Note: List of models can be found here: https://docs.google.com/spreadsheets/d/1RKOVpselB98Nnh_EOC4A2BYn8_201tmPODpNWu4w7xI/edit?gid=0#gid=0
     
     if get_all_scores:
