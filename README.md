@@ -88,7 +88,7 @@ We tokenize all TL;DR variants using the mT5 tokenizer (`google/mt5-base`) with 
 Run the `preprocessing/run_tokenize.sh` to tokenize all datasets:
 
 Use `--use_cache` to enable HuggingFace cache if needed.
-> To use `--use_cache`, first set `HF_CACHE_PATH` in `utils.py`.
+> To activate it, set the `HF_CACHE_PATH` in `utils.py` to your desired cache directory.
 
 ---
 
@@ -96,7 +96,7 @@ Use `--use_cache` to enable HuggingFace cache if needed.
 
 We fine-tune the mT5 model (`google/mt5-base`) with LoRA adapters on each TL;DR variant. The training script supports checkpoint resumption and progress logging.
 
-Set the `CHECKPOINT_PATH` in `utils.py`, and then run:
+Set the `CHECKPOINT_PATH` in `utils.py` to the local directory where you want to save checkpoints, and then run:
 
 ```bash
 python -m training/train_model --variant $variant
@@ -115,7 +115,7 @@ We evaluate summaries using:
 - **BERTScore** on TL;DR (with reference)
 - **LaSE** on CodeSwitch (reference-free)
 
-Set `RESULTS_PATH` in `utils.py` to store your results before running.
+Set `RESULTS_PATH` in `utils.py` to your desired output directory before running.
 
 #### Step 1: Generate summaries
 
