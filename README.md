@@ -14,7 +14,15 @@ The system is evaluated through two complementary tracks:
 
 This end-to-end workflow allows us to assess the impact of multilingual data augmentation on both monolingual and multilingual summarization tasks.
 
-Let's get started!
+## File Structure and Usage
+```
+├── preprocessing/          # Scripts for data splitting, sampling, and tokenization
+├── augmentation/           # Data augmentation via code-switching (full, noun, sent)
+├── training/               # Training scripts with LoRA support
+├── evaluation/             # Generation and evaluation (BERTScore / LaSE)
+├── analysis/               # Jupyter notebooks for data & score analysis
+└── utils.py                # Paths and shared constants
+```
 
 ---
 
@@ -22,7 +30,7 @@ Let's get started!
 ### Setup
 
 First, clone the repo and install dependencies:
-```python
+```bash
 git clone https://github.com/Iskar-Deng/multilingual-social-summary
 cd mission-impossible-language-models
 pip install -r requirements.txt
@@ -42,13 +50,13 @@ Your external data directory should look like this:
 └── cs_main_reddit_corpus.csv
 ```
 
-Finally, set the `DATA_ROOT` variable in `utils.py` to the absolute path of this directory on your system.
+Set the DATA_ROOT variable in utils.py to the absolute path of this directory before proceeding.
 
 ---
 
 ### Data preprocessing
 
-After downloading the datasets, you will need to split the training and validation data from the TL;DR dataset:
+After downloading the datasets, split the TL;DR dataset into training and validation sets:
 
 ```bash
 python -m preprocessing.split_tldr --train_size 100000 --val_size 1000
@@ -68,7 +76,7 @@ First, download the translation models from HuggingFace:
 python -m spacy download en_core_web_sm
 ```
 
-Then, run `augmentation\run_augmentation.sh` to generate the augmented data, or use each script seperately:
+Then, run `augmentation/run_augmentation.sh` to generate the augmented data, or use each script separately:
 
 - `trans_full.py`: full-document translation into 5 target languages.
 - `trans_sent.py`: partial sentence-level code-switching.
@@ -77,7 +85,7 @@ Then, run `augmentation\run_augmentation.sh` to generate the augmented data, or 
 ### Tokenization
 
 We tokenize all TL;DR variants using the mT5 tokenizer (`google/mt5-base`) with max lengths of 512 (input) and 64 (summary). Padding is applied to both.
-Run the `preprocessing\run_tokenize.sh` to tokenize all datasets:
+Run the `preprocessing/run_tokenize.sh` to tokenize all datasets:
 
 Use `--use_cache` to enable HuggingFace cache if needed.
 > To use `--use_cache`, first set `HF_CACHE_PATH` in `utils.py`.
@@ -107,7 +115,7 @@ We evaluate summaries using:
 - **BERTScore** on TL;DR (with reference)
 - **LaSE** on CodeSwitch (reference-free)
 
-Set `RESULTS_PATH` in `utils.py` before running.
+Set `RESULTS_PATH` in `utils.py` to store your results before running.
 
 #### Step 1: Generate summaries
 
@@ -141,18 +149,6 @@ We provide scripts to analyze the dataset and the results. See the notebooks und
 - `plot_eval_scores.ipynb`: Visualize BERTScore and LaSE across checkpoints
 
 ---
-
-## File Structure and Usage
-```
-.
-├── preprocessing/          # Scripts for data splitting, sampling, and tokenization
-├── augmentation/           # Data augmentation via code-switching (full, noun, sent)
-├── training/               # Training scripts with LoRA support
-├── evaluation/             # Generation and evaluation (BERTScore / LaSE)
-├── analysis/               # Jupyter notebooks for data & score analysis
-├── utils.py                # Paths and shared constants
-└── run_*.sh                # Scripts for batch training, generation, and evaluation
-```
 
 ## Contribution
 
