@@ -1,21 +1,6 @@
-# Checkpoints
 checkpoints/
-
-# Datasets
 data/
-
-# Python virtual environments (add the path of your local env here)
 venv/
-.venv/
-socialsum-venv/
+results/
 
-# Model files
-*.bin
-*.pt
-
-# MacOS system files
 .DS_Store
-
-# Log files
-*.log
-logs/

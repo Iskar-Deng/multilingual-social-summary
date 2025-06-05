@@ -14,382 +14,150 @@ The system is evaluated through two complementary tracks:
 
 This end-to-end workflow allows us to assess the impact of multilingual data augmentation on both monolingual and multilingual summarization tasks.
 
-## Datasets
+Let's get started!
 
--  [TL;DR Reddit dataset](https://zenodo.org/records/1043504)  
-  An English monolingual summarization dataset collected from Reddit, where users provide short TL;DR summaries for each entry.
--  [CodeSwitch-Reddit](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)  
-  A multilingual Reddit dataset containing code-switched entries across several languages, without human-written summaries.
+---
 
-## Augmented Data
+## Experiment Pipeline
+### Setup
 
-- https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu?usp=drive_link
+First, clone the repo and install dependencies:
+```python
+git clone https://github.com/Iskar-Deng/multilingual-social-summary
+cd mission-impossible-language-models
+pip install -r requirements.txt
+```
 
-## Model
+Then, download the dataset [Zenodo (Webis-TLDR-17)](https://zenodo.org/records/1043504) and [CodeSwitch (UofT)](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz), extract them, and place the required files in the same folder:
+| Dataset Name         | Source                                                                                     | Filename                            |
+|----------------------|--------------------------------------------------------------------------------------------|-------------------------------------|
+| TL;DR Reddit         | [Zenodo (Webis-TLDR-17)](https://zenodo.org/records/1043504)                              | `corpus-webis-tldr-17.json`         |
+| CodeSwitch-Reddit    | [CodeSwitch (UofT)](https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz)          | `cs_main_reddit_corpus.csv`         |
 
-- [google/mt5-base](https://huggingface.co/google/mt5-base)  
-  Fine-tuned using Hugging Face Transformers  
-  Optional PEFT/LoRA support for efficiency
+Your external data directory should look like this:
 
-- [Helsinki-NLP/MarianMT](https://huggingface.co/Helsinki-NLP)  
-  Used for data augmentation (multilingual translation)
+```
+/path/to/your/DATA_ROOT/
+├── corpus-webis-tldr-17.json
+└── cs_main_reddit_corpus.csv
+```
 
-- [facebook/nllb-200](https://huggingface.co/facebook/nllb-200-distilled-600M)  
-  Used for data augmentation (multilingual translation)
+Finally, set the `DATA_ROOT` variable in `utils.py` to the absolute path of this directory on your system.
 
-## Evaluation
+---
 
-- BERTScore (reference-based)
-- LaSE (reference-free)
-- ROUGE (disabled due to environment limitations)
+### Data preprocessing
 
-## Environment and Dependency Usage Guidelines
+After downloading the datasets, you will need to split the training and validation data from the TL;DR dataset:
 
-This project is structured to run in a specific environment to ensure compatibility. We are currently using **Python 3.6.8** for consistency across the Patas server. Below are the key environment details:
+```bash
+python -m preprocessing.split_tldr --train_size 100000 --val_size 1000
+```
 
-- **Python Version**: 3.6.8
-- **Transformers**: 4.12.0
-- **Datasets**: 1.15.1
-- **PyTorch**: 1.10.2
+Also, sample a subset from the CodeSwitch-Reddit corpus:
 
-Please ensure that any new dependencies added are compatible with these versions. If you need to install new packages for local experiments, verify their compatibility with **Python 3.6.8** before adding them. It's recommended to run and test code directly on the server to maintain consistency.
+```bash
+python -m preprocessing.slice_cs --num_samples 10000
+```
+
+### Data augmentation
+We simulate code-switching by translating parts of the TL;DR training set into five target languages: Tagalog, Greek, Romanian, Indonesian, and Russian. 
+
+First, download the translation models from HuggingFace:
+```bash
+python -m spacy download en_core_web_sm
+```
+
+Then, run `augmentation\run_augmentation.sh` to generate the augmented data, or use each script seperately:
+
+- `trans_full.py`: full-document translation into 5 target languages.
+- `trans_sent.py`: partial sentence-level code-switching.
+- `trans_noun.py`: code-switch common nouns only.
+
+### Tokenization
+
+We tokenize all TL;DR variants using the mT5 tokenizer (`google/mt5-base`) with max lengths of 512 (input) and 64 (summary). Padding is applied to both.
+Run the `preprocessing\run_tokenize.sh` to tokenize all datasets:
+
+Use `--use_cache` to enable HuggingFace cache if needed.
+> To use `--use_cache`, first set `HF_CACHE_PATH` in `utils.py`.
+
+---
+
+### Training
+
+We fine-tune the mT5 model (`google/mt5-base`) with LoRA adapters on each TL;DR variant. The training script supports checkpoint resumption and progress logging.
+
+Set the `CHECKPOINT_PATH` in `utils.py`, and then run:
+
+```bash
+python -m training/train_model --variant $variant
+```
+
+You can also use the batch script:
+
+```bash
+bash run_train_all.sh
+```
+---
+
+### Evaluation
+
+We evaluate summaries using:
+- **BERTScore** on TL;DR (with reference)
+- **LaSE** on CodeSwitch (reference-free)
+
+Set `RESULTS_PATH` in `utils.py` before running.
+
+#### Step 1: Generate summaries
+
+To generate summaries from a checkpoint:
+
+```bash
+python -m evaluation.generate_summary --variant base --step 500
+```
+
+To generate from all checkpoints:
+
+```bash
+bash run_generate_all.sh
+```
+
+#### Step 2: Evaluate with BERTScore and LaSE
+
+Run the batch script `evaluation/run_eval_all.sh`, or evaluate on a single checkpoint:
+
+```bash
+python -m evaluation.run_BERT --variant base --step 500
+python -m evaluation.run_LaSE --variant base --step 500
+```
+
+### Analysis
+
+We provide scripts to analyze the dataset and the results. See the notebooks under `/analysis`:
+
+- `analyze_cs.ipynb`: Inspect the CodeSwitch dataset
+- `analyze_tldr.ipynb`: Analyze TL;DR content and summary characteristics
+- `plot_eval_scores.ipynb`: Visualize BERTScore and LaSE across checkpoints
 
 ---
 
 ## File Structure and Usage
-
-The src is organized as follows:
-
 ```
-src/
-├── data_augmentation
-│   ├── marian              # MarianMT models for data augmentation
-│   ├── nllb                # NLLB-200 models for data augmentation
-├── data_processing
-│   ├── analyze_tldr.py            # Script to analyze TLDR data
-│   ├── analyze_code-switch.py     # Script to analyze CodeSwitch data
-│   ├── generate_dataset.py        # Script to generate datasets
-├── data_split
-│   ├── generate_indices.py         # Script to generate random test set indices
-│   ├── generate_indices.slurm      # Slurm script to submit for index generation
-│   ├── split_by_index.py           # Script to split test/train sets by index
-│   ├── split_by_index.slurm        # Slrum script to submit for test/train splits
-├── data_tokenization
-│   ├── clean_tokenized.py                # Script to remove unnecessary fields in tokenized tldr
-│   ├── tokenize_tldr.py                  # Slurm script to tokenize tldr
-│   ├── tokenize_tldr.slurm               # Slurm script to submit for tldr tokenization
-│   ├── tokenize_trans_full.py            # Slurm script to tokenize trans_full
-│   ├── tokenize_trans_full.slurm         # Slurm script to submit for trans_full tokenization
-│   ├── tokenize_trans_noun.py            # Slurm script to tokenize trans_noun
-│   ├── tokenize_trans_noun.slurm         # Slurm script to submit for trans_noun tokenization
-│   ├── tokenize_trans_sent.py            # Slurm script to tokenize trans_sent
-│   ├── tokenize_trans_sent.slurm         # Slurm script to submit for trans_sent tokenization
-├── evaluation
-│   ├── evaluation_scripts
-│   │   ├── eval_bert_score.py  # BERTScore evaluation script
-│   │   ├── eval_LaSE.py        # LaSE evaluation script
-│   │   ├── eval_rouge.py       # ROUGE evaluation script
-│   ├── run_scripts
-│   │   ├── run_eval_no_reference.py # Evaluation without reference summaries
-│   │   ├── run_eval_with_reference.py # Evaluation with reference summaries
-│   └── sample_data
-│       ├── source_sum.jsonl    # Example input file for summarization tasks
-│       └── sum_ref.jsonl       # Example reference summaries
-├── model_test
-│   ├── test_finetuned_model.py  # Test script for fine-tuned models
-│   └── test_hf_model.py         # Test script for HuggingFace models
-├── model_train
-│   ├── train_mt5.py             # Training script for the MT5 model
-│   ├── train_mt5.condor         # Condor job script for training
-│   └── train_mt5.sh             # Shell script for training
-├── model_train_tokenized
-│   ├── train_mt5_tok.py            # Training script for the MT5 model on tokenized tldr
-│   ├── train_mt5_tok.slurm         # Slurm script to submit for training
-│   ├── train_trans_full.py         # Training script for the MT5 model on tokenized trans_full
-│   ├── train_trans_full.slurm      # Slurm script to submit for training
-│   ├── train_trans_noun.py         # Training script for the MT5 model on tokenized trans_noun
-│   ├── train_trans_noun.slurm      # Slurm script to submit for training
-│   ├── train_trans_sent.py         # Training script for the MT5 model on tokenized trans_sent
-│   └── train_trans_sent.slurm      # Slurm script to submit for training
-├── stress_test
-│   ├── stress_pipeline.sh       # Full training and eval pipeline
-│   ├── stress_pipeline.submit   # HTCondor submit script
-│   ├── stress_pipeline.slurm    # SLURM submit script (Hyak)
-│   ├── evaluate_tldr.py         # TL;DR evaluation with BERTScore
-│   ├── evaluate_codeswitch.py   # CodeSwitch evaluation with LaSE
-│   ├── tldr_train_3000.jsonl    # Sample training data
-│   ├── tldr_test_300.jsonl      # Sample TL;DR test data
-│   ├── codeswitch_test_100.jsonl # Sample CodeSwitch test data
-```
-
-### Key Folders and Files:
-- **data_augmentation**: Contains subfolders for MarianMT and NLLB models, and scripts for different data augmentation strategies (e.g., multilingual, monolingual).
-- **data_processing**: Scripts to generate and analyze datasets.
-- **data_split**: Scripts to split test/train.
-- **data_tokenization**: Scripts to tokenize data.
-- **evaluation**: Contains evaluation scripts for BERTScore, LaSE, and ROUGE, as well as related data.
-- **model_test**: Scripts to test the performance of fine-tuned and HuggingFace models.
-- **model_train**: Scripts to train the MT5 model and associated Condor jobs.
-- **model_train_tokenized**: Scripts to train the MT5 model on tokenized data.
-- **stress_test**: Scripts to test the pipeline.
-
-## How to Run Stress Test Pipeline (Update)
-- **Note**: Update to your absolute path. See output in condor/slurm logs.
-### 1. On Patas (Condor)
-
-```bash
-condor_submit src/stress_test/stress_pipeline.submit
-```
-
-### 2. On Hyak (SLURM)
-
-```bash
-sbatch src/stress_test/stress_pipeline.slurm
-```
-
-### 3. Locally or directly on a node (debugging only)
-
-```bash
-bash src/stress_test/stress_pipeline.sh
-```
-
-This script will:
-- Fine-tune the model on TL;DR data (3,000 training samples)
-- Evaluate the fine-tuned model on TL;DR using BERTScore (300 test samples)
-- Evaluate on code-switched data using LaSE (100 test samples)
-- Log time, GPU, CPU usage, and evaluation results to `logs/`
-
-
-## How to Run (Update)
-- **Note**: Update to your absolute path. 
-### 1. Setup environment
-
-- Use Python 3.6.8.
-- Install dependencies inside your virtual environment:
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Prepare datasets
-
-#### Download datasets
-- Download TL;DR dataset: https://zenodo.org/records/1043504
-- Download CodeSwitch-Reddit dataset: https://www.cs.toronto.edu/~ella/code-switch.reddit.tar.gz
-- Download augmented TL;DR datasets: https://drive.google.com/drive/folders/1ffvffJ2Bki3H7e64C9JP4fmqI8BQAwJu?usp=drive_link
-
-Unpack and place them under a `data/` directory.
-
-#### Tokenize datasets
-Example commands are for training sets. Modify ```data_path``` to tokenize test sets. Modify ```output_path``` for outputs.
-
-##### Tokenize TL;DR 
-```bash
-python src/data_tokenization/tokenize_tldr.py \
-  --data_path data/splits/tldr_train.jsonl \
-  --output_path data/splits/tokenized_train
-```
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/data_tokenization/tokenize_tldr.slurm
-```
-
-##### Clean tokenized TL;DR (Optional) to remove unnecessary fields
-```bash
-python src/data_tokenization/clean_tokenized.py
-```
-
-##### Tokenize translate_full
-```bash
-python src/data_tokenization/tokenize_trans_full.py \
-  --data_path data/splits/trans_full_train.jsonl \
-  --output_path data/splits/tokenized_train
-```
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/data_tokenization/tokenize_trans_full.slurm
-```
-
-##### Tokenize translate_nouns
-```bash
-python src/data_tokenization/tokenize_trans_noun.py \
-  --data_path data/splits/trans_noun_train.jsonl \
-  --output_path data/splits/tokenized_train
-```
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/data_tokenization/tokenize_trans_noun.slurm
-```
-
-##### Tokenize translate_sentence
-```bash
-python src/data_tokenization/tokenize_trans_sent.py \
-  --data_path data/splits/trans_sent_train.jsonl \
-  --output_path data/splits/tokenized_train
-```
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/data_tokenization/tokenize_trans_sent.slurm
-```
-
-### 3. Train baseline model
-
-```bash
-python3 /src/LoRa/lora_base.py \
-  --tokenized_path /data/splits/tokenized_train_clean \
-  --output_dir /results/LoRa-outputs/output_tldr_clean_100k \
-  --batch_size 4 \
-  --grad_accum_steps 4 \
-  --num_epochs 2 \
-  --log_steps 100 \
-  --num_workers 4 
-```
-
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/LoRa/train_tldr.slurm
-```
-
-### 4. Train augmented model
-#### With translate_full dataset
-```bash
-python3 /src/LoRa/lora_base.py \
-  --tokenized_path /data/splits/tokenized_train/trans_full \
-  --output_dir /results/LoRa-outputs/output_trans_full_100k \
-  --batch_size 4 \
-  --grad_accum_steps 4 \
-  --num_epochs 2 \
-  --log_steps 100 \
-  --num_workers 4 
-```
-
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/LoRa/train_full.slurm
-```
-
-#### With translate_nouns dataset
-```bash
-python3 /src/LoRa/lora_base.py \
-  --tokenized_path /data/splits/tokenized_train/trans_noun \
-  --output_dir /results/LoRa-outputs/output_trans_noun_100k \
-  --batch_size 4 \
-  --grad_accum_steps 4 \
-  --num_epochs 2 \
-  --log_steps 100 \
-  --num_workers 4 
-```
-
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/LoRa/train_noun.slutm
-```
-#### With translate_sentence dataset
-```bash
-python3 /src/LoRa/lora_base.py \
-  --tokenized_path /data/splits/tokenized_train/trans_sent \
-  --output_dir /results/LoRa-outputs/output_trans_sent_100k \
-  --batch_size 4 \
-  --grad_accum_steps 4 \
-  --num_epochs 2 \
-  --log_steps 100 \
-  --num_workers 4 
-```
-
-- Or submit as a Slurm job on Hyak:
-
-```bash
-sbatch src/LoRa/train_sent.slurm
-```
-
-### 5. Run evaluation
-
-- With references (TL;DR):
-
-```bash
-python src/evaluation/run_scripts/run_eval_with_reference.py path_to_your_output_file.jsonl --bert
-```
-
-Example format of `output_file.jsonl` (each line is a JSON object):
-```json
-{"summary_text": "This is the predicted summary.", "reference_text": "This is the gold summary."}
-```
-
-- Without references (CodeSwitch):
-
-```bash
-python src/evaluation/run_scripts/run_eval_no_reference.py path_to_your_output_file.jsonl --LaSE
-```
-
-Example format of `output_file.jsonl` (each line is a JSON object):
-```json
-{"input_text": "This is the input post text.", "summary_text": "This is the predicted summary."}
-```
-
-### 6. Run data augmentation (optional)
-
-For example, to run multilingual input translation:
-
-```bash
-python src/data_augmentation/nllb/translate_nouns/translate_nouns.py data/corpus-webis-tldr-17.json output.jsonl 42
-```
-
-Or submit via Condor:
-
-```bash
-condor_submit src/data_augmentation/nllb/translate_nouns/translate_nouns.cmd
-```
----
-
-## Important Notes
-
-- Ensure compatibility with the specified **Python 3.6.8** environment, especially when adding new dependencies.
-- **ROUGE** evaluation cannot be used on the Patas node due to version mismatches.
-- If encountering issues with data augmentation using **fasttext**, fallback to using **langid** for language identification.
-- **Testing** and **training** should be done on the specified server (patas-gn3) to avoid discrepancies with local setups.
-
-## GitIgnore Rules
-
-```plaintext
-# Checkpoints
-checkpoints/
-
-# Datasets
-data/
-
-# Python virtual environments
-venv/
-.venv/
-socialsum-venv/
-
-# Model files
-*.bin
-*.pt
-
-# MacOS system files
-.DS_Store
-
-# Log files
-*.log
-logs/
+.
+├── preprocessing/          # Scripts for data splitting, sampling, and tokenization
+├── augmentation/           # Data augmentation via code-switching (full, noun, sent)
+├── training/               # Training scripts with LoRA support
+├── evaluation/             # Generation and evaluation (BERTScore / LaSE)
+├── analysis/               # Jupyter notebooks for data & score analysis
+├── utils.py                # Paths and shared constants
+└── run_*.sh                # Scripts for batch training, generation, and evaluation
 ```
 
 ## Contribution
-
-This project was developed collaboratively by the team for a multilingual summarization research task.
 
 - Data augmentation: Zoey Zhou  
 - Model fine-tuning: Nathalia Xu  
 - Benchmark building: Jordan Jin  
 - Dataset analysis: Bartosz Mamro  
 - Code integration: Iskar Deng
-
-
-
