@@ -19,15 +19,16 @@ try:
 except LookupError:
     nltk.download("punkt")
 
-# === I/O paths ===
 INPUT_PATH = os.path.join(DATA_PATH, "tldr_split", "tldr_train_base.jsonl")
 OUTPUT_PATH = os.path.join(DATA_PATH, "tldr_split", "tldr_train_sent.jsonl")
 
+# Load NLLB model and tokenizer
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(NLLB_MODEL_NAME, src_lang=NLLB_SRC_LANG)
     model = AutoModelForSeq2SeqLM.from_pretrained(NLLB_MODEL_NAME)
     return tokenizer, model
 
+# Translate a given sentence into the target language
 def translate_text(text, tokenizer, model, tgt_lang_code):
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
@@ -36,6 +37,7 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
         out = model.generate(**inputs, forced_bos_token_id=bos_id)
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
+# Randomly translate one or more sentences in each input text to a random target language
 def translate_random_sentences(dataset, seed, use_gpu):
     if use_gpu and torch.cuda.is_available():
         device = "cuda"
@@ -56,6 +58,7 @@ def translate_random_sentences(dataset, seed, use_gpu):
             out.append(entry)
             continue
 
+        # Select subset of sentences to translate
         num_to_translate = random.randint(1, max(1, len(sentences) // 2))
         selected_idxs = random.sample(range(len(sentences)), num_to_translate)
         lang = random.choice(list(LANG_CODES.keys()))

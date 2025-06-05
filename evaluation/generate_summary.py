@@ -1,5 +1,5 @@
 # evaluation/generate_summary.py
-# Author: Nathalia Xu (Modified)
+# Author: Nathalia Xu
 
 import os
 import argparse
@@ -11,6 +11,7 @@ import torch
 from tqdm import tqdm
 from utils import DATA_PATH, RESULTS_PATH
 
+# Load LoRA-adapted mT5 model and tokenizer from checkpoint path
 def load_model(ckpt_path):
     base_model = MT5ForConditionalGeneration.from_pretrained("google/mt5-base")
     model = PeftModel.from_pretrained(base_model, ckpt_path)
@@ -20,7 +21,7 @@ def load_model(ckpt_path):
     model.eval()
     return tokenizer, model, device
 
-
+# Generate summaries for a batch of input texts
 def generate_summary_batch(texts, tokenizer, model, device, max_input_len=512, max_output_len=64):
     inputs = tokenizer(
         texts,
@@ -39,7 +40,7 @@ def generate_summary_batch(texts, tokenizer, model, device, max_input_len=512, m
         )
     return tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
-
+# Apply batch summary generation to a dataset and write results to file
 def generate_for_dataset(name, data, tokenizer, model, device, batch_size, output_path):
     print(f"Generating summaries for {name} ({len(data)} examples)...")
     results = []
@@ -54,7 +55,6 @@ def generate_for_dataset(name, data, tokenizer, model, device, batch_size, outpu
         for item in results:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", required=True, choices=["base", "noun", "sent", "full", "val"],
@@ -63,7 +63,6 @@ def main():
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for generation")
     args = parser.parse_args()
 
-    # === Resolve model checkpoint ===
     ckpt_dir = os.path.join("checkpoints", f"mt5_{args.variant}", f"checkpoint-{args.step}")
     if not os.path.exists(ckpt_dir):
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_dir}")
@@ -71,11 +70,9 @@ def main():
 
     tokenizer, model, device = load_model(ckpt_dir)
 
-    # === Output directory ===
     output_dir = os.path.join(RESULTS_PATH, args.variant)
     os.makedirs(output_dir, exist_ok=True)
 
-    # === TL;DR data ===
     tldr_path = os.path.join(DATA_PATH, "tldr_split", "tldr_val.jsonl")
     print(f"Loading TL;DR from {tldr_path}...")
     with open(tldr_path, "r", encoding="utf-8") as f:
@@ -83,7 +80,6 @@ def main():
     tldr_out_path = os.path.join(output_dir, f"{args.variant}_{args.step}_tldr.jsonl")
     generate_for_dataset("TL;DR", tldr_data, tokenizer, model, device, args.batch_size, tldr_out_path)
 
-    # === CodeSwitch data ===
     cs_path = os.path.join(DATA_PATH, "codeswitch", "sliced_cs.csv")
     print(f"Loading CodeSwitch from {cs_path}...")
     df_cs = pd.read_csv(cs_path)
@@ -92,7 +88,6 @@ def main():
     generate_for_dataset("CodeSwitch", cs_data, tokenizer, model, device, args.batch_size, cs_out_path)
 
     print("All done.")
-
 
 if __name__ == "__main__":
     main()

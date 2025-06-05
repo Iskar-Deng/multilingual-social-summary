@@ -16,6 +16,7 @@ from peft import LoraConfig, get_peft_model, TaskType
 from tqdm import tqdm
 from utils import TRAINING_ARGS, DATA_PATH, CHECKPOINT_PATH
 
+# Custom callback to display training progress bar
 class TqdmCallback(TrainerCallback):
     def __init__(self):
         self.pbar = None
@@ -32,7 +33,9 @@ class TqdmCallback(TrainerCallback):
         if self.pbar:
             self.pbar.close()
 
+# Main training loop
 def main(variant):
+    # Load tokenized dataset and prepare checkpoint directory
     tokenized_path = os.path.join(DATA_PATH, "tokenized", f"tldr_{variant}_tokenized")
     checkpoint_path = os.path.join(CHECKPOINT_PATH, f"mt5_{variant}")
 
@@ -40,10 +43,12 @@ def main(variant):
     dataset = load_from_disk(tokenized_path)
     print(f"Loaded {len(dataset)} examples from {tokenized_path}")
 
+    # Load base mT5 model and enable gradient checkpointing
     base_model = MT5ForConditionalGeneration.from_pretrained("google/mt5-base")
     base_model.config.use_cache = False
     base_model.gradient_checkpointing_enable()
 
+    # Inject LoRA adapter into the model
     lora_config = LoraConfig(
         r=8,
         lora_alpha=32,
@@ -54,10 +59,11 @@ def main(variant):
     )
     model = get_peft_model(base_model, lora_config)
     model.print_trainable_parameters()
-    model.to("cpu")
+    model.to("cpu")  # Send to device (updated later by trainer)
 
     os.makedirs(os.path.join(checkpoint_path, "logs"), exist_ok=True)
 
+    # Set training arguments
     training_args = Seq2SeqTrainingArguments(
         output_dir=checkpoint_path,
         overwrite_output_dir=True,
@@ -69,7 +75,6 @@ def main(variant):
         save_steps=TRAINING_ARGS["save_steps"],
         logging_dir=os.path.join(checkpoint_path, "logs"),
         logging_steps=TRAINING_ARGS["log_steps"],
-        # evaluation_strategy="no",
         predict_with_generate=True,
         fp16=False,
         bf16=torch.cuda.is_bf16_supported(),
@@ -80,6 +85,7 @@ def main(variant):
         resume_from_checkpoint=True,
     )
 
+    # Initialize trainer
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
@@ -89,6 +95,7 @@ def main(variant):
         callbacks=[TqdmCallback()]
     )
 
+    # Resume from latest checkpoint if available
     last_ckpt = None
     if os.path.isdir(checkpoint_path):
         ckpts = [os.path.join(checkpoint_path, d) for d in os.listdir(checkpoint_path) if d.startswith("checkpoint")]
@@ -96,15 +103,18 @@ def main(variant):
             last_ckpt = max(ckpts, key=os.path.getmtime)
             print(f"Resuming from checkpoint: {last_ckpt}")
 
+    # Start training
     print("Starting training...")
     trainer.train(resume_from_checkpoint=last_ckpt if last_ckpt else None)
 
+    # Save final model and tokenizer
     print("Saving final model...")
     model.save_pretrained(checkpoint_path)
     tokenizer.save_pretrained(checkpoint_path)
     print(f"Model and tokenizer saved to {checkpoint_path}")
 
 if __name__ == "__main__":
+    # CLI interface to specify variant
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", required=True, choices=["base", "noun", "sent", "full"],

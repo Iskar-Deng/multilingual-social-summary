@@ -10,11 +10,13 @@ import argparse
 import os
 from utils import DATA_PATH, NLLB_MODEL_NAME, NLLB_SRC_LANG, LANG_CODES, LANG_NAMES
 
+# Load NLLB tokenizer and model
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(NLLB_MODEL_NAME, src_lang=NLLB_SRC_LANG)
     model = AutoModelForSeq2SeqLM.from_pretrained(NLLB_MODEL_NAME)
     return tokenizer, model
 
+# Translate a single text string into the target language
 def translate_text(text, tokenizer, model, tgt_lang_code):
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
@@ -26,6 +28,7 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
         )
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
+# Translate the dataset in blocks, distributing examples across 5 languages
 def translate_fixed_blocks(dataset, use_gpu):
     device = "cuda" if (use_gpu and torch.cuda.is_available()) else "cpu"
     tokenizer, model = load_model_and_tokenizer()

@@ -12,18 +12,19 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from utils import DATA_PATH, NLLB_MODEL_NAME, NLLB_SRC_LANG, LANG_CODES, LANG_NAMES
 
-# === I/O paths ===
 INPUT_PATH = os.path.join(DATA_PATH, "tldr_split", "tldr_train_base.jsonl")
 OUTPUT_PATH = os.path.join(DATA_PATH, "tldr_split", "tldr_train_noun.jsonl")
 
-# === Load resources ===
+# === Load spaCy model for POS tagging ===
 nlp = spacy.load("en_core_web_sm")
 
+# Load NLLB model and tokenizer
 def load_model_and_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(NLLB_MODEL_NAME, src_lang=NLLB_SRC_LANG)
     model = AutoModelForSeq2SeqLM.from_pretrained(NLLB_MODEL_NAME)
     return tokenizer, model
 
+# Translate a single word or phrase into the target language
 def translate_text(text, tokenizer, model, tgt_lang_code):
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
@@ -34,6 +35,7 @@ def translate_text(text, tokenizer, model, tgt_lang_code):
 
     return tokenizer.decode(out[0], skip_special_tokens=True)
 
+# Translate a random subset of NOUNs in the input text to a random target language
 def translate_random_lang(dataset, seed, use_gpu):
     device = "cuda" if use_gpu and torch.cuda.is_available() else "cpu"
     tokenizer, model = load_model_and_tokenizer()
@@ -46,11 +48,13 @@ def translate_random_lang(dataset, seed, use_gpu):
         doc = nlp(raw)
         words = [token.text for token in doc]
 
+        # Identify NOUNs
         noun_indices = [i for i, token in enumerate(doc) if token.pos_ == "NOUN"]
         if not noun_indices:
             out.append(entry)
             continue
 
+        # Randomly sample nouns to translate
         num_to_translate = random.randint(1, max(1, len(noun_indices) // 2))
         selected_noun_indices = random.sample(noun_indices, num_to_translate)
         lang = random.choice(list(LANG_CODES.keys()))

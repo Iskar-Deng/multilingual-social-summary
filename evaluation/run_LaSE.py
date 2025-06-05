@@ -1,5 +1,6 @@
-# evaluation/run_scripts/run_eval_no_reference.py
+# evaluation/run_LaSE.py
 # Author: Jordan Jin
+
 import json
 import argparse
 import sys
@@ -7,6 +8,7 @@ import os
 from tqdm import tqdm
 from utils import RESULTS_PATH
 
+# Import LaSE evaluation script
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "evaluation", "evaluation_scripts")))
 from eval_LaSE import evaluate_LaSE
 
@@ -14,12 +16,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="Evaluate predictions using LaSE metric."
     )
-
     parser.add_argument("--variant", required=True, choices=["base", "noun", "sent", "full", "val"], help="Dataset variant")
     parser.add_argument("--step", required=True, type=int, help="Checkpoint step used for generation")
-
     args = parser.parse_args()
 
+    # Resolve prediction file path
     pred_file = os.path.join(RESULTS_PATH, args.variant, f"{args.variant}_{args.step}_cs.jsonl")
     if not os.path.exists(pred_file):
         print(f"File not found: {pred_file}")
@@ -28,6 +29,7 @@ def main():
     LaSE_scores = []
     num_lines = 0
 
+    # Iterate over predictions and compute LaSE score per example
     with open(pred_file, "r", encoding="utf-8") as f:
         for line in tqdm(f, desc="Evaluating", unit="example"):
             data = json.loads(line)
@@ -45,7 +47,7 @@ def main():
 
     avg_LaSE_score = sum(LaSE_scores) / num_lines
 
-    # Save the results to a JSONL file
+    # Save LaSE scores and average to output file
     out_dir = os.path.join(RESULTS_PATH, "scores")
     os.makedirs(out_dir, exist_ok=True)
     out_filename = os.path.join(out_dir, f"{args.variant}_{args.step}_cs_LaSE.jsonl")
